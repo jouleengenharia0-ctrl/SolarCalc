@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarCalc — Dimensionamento Fotovoltaico</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161b2a;
+    --border: #252d45;
+    --accent: #3d8bff;
+    --accent-dim: #0f2247;
+    --danger: #ff4e4e;
+    --danger-dim: #3d1010;
+    --warn: #ffb84e;
+    --warn-dim: #3d2a10;
+    --text: #e8eef8;
+    --text-muted: #6a80aa;
+    --text-dim: #2d3d5c;
+    --radius: 10px;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .logo-block { display: flex; flex-direction: column; gap: 4px; }
+
+  .logo {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(61,139,255,0.35);
+  }
+  .logo span { color: var(--text); }
+
+  .tagline {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { background: #5aa0ff; border-color: #5aa0ff; }
+  .btn.danger { color: var(--danger); border-color: var(--danger-dim); }
+  .btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+  .btn.sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+
+  .layout { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start; }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem; font-weight: 600; }
+
+  input, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.55rem 0.8rem;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--text-dim); }
+
+  .field { margin-bottom: 0.9rem; }
+  .row { display: flex; gap: 0.75rem; }
+  .row .field { flex: 1; margin-bottom: 0; }
+
+  .presets-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+
+  .preset-chip {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .preset-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  .equip-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .equip-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    animation: slideIn 0.2s ease;
+    position: relative;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .equip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .equip-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+  .equip-summary { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); margin-top: 2px; }
+
+  .equip-fields { display: grid; grid-template-columns: 1fr 1fr 80px 1fr; gap: 0.6rem; align-items: end; }
+  @media (max-width: 600px) { .equip-fields { grid-template-columns: 1fr 1fr; } }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+  .stat-value { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--text); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.big {
+    font-size: 1.5rem;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(61,139,255,0.4);
+  }
+
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    margin-top: 0.75rem;
+    font-weight: 600;
+  }
+  .alert.ok    { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); }
+  .alert.error { background: var(--danger-dim); border: 1px solid var(--danger); color: var(--danger); }
+  .alert.warn  { background: var(--warn-dim);   border: 1px solid var(--warn);   color: var(--warn); }
+  .alert-icon  { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+  .table-wrap { overflow-x: auto; margin-top: 0.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #181f30; color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .td-num { font-family: var(--mono); text-align: right; }
+  tfoot td { border-top: 2px solid var(--accent); font-weight: 700; color: var(--accent); font-family: var(--mono); }
+
+  .slider-wrap { position: relative; margin-top: 0.4rem; }
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(61,139,255,0.6);
+    border: 2px solid var(--bg);
+    cursor: pointer;
+  }
+  .slider-val { font-family: var(--mono); font-size: 0.9rem; font-weight: 700; color: var(--accent); text-align: right; margin-top: 0.3rem; }
+
+  .suggestion {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .suggestion strong { color: var(--warn); }
+
+  .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-dim); }
+  .empty-state svg { opacity: 0.3; margin-bottom: 0.75rem; }
+  .empty-state p { font-size: 0.85rem; }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    width: 100%; max-width: 480px;
+    transform: translateY(10px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+  .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+  .save-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 260px; overflow-y: auto; }
+  .save-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.65rem 0.9rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 0.82rem;
+  }
+  .save-item:hover { border-color: var(--accent); }
+  .save-item .save-name { font-weight: 700; }
+  .save-item .save-date { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); }
+  .save-item-actions { display: flex; gap: 0.4rem; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  @media (max-width: 500px) {
+    .logo { font-size: 1.6rem; }
+    .card { padding: 1rem; }
+  }
+
+  /* ── PDF PRINT STYLES ──────────────────────────────────────────────────────── */
+  .pdf-timestamp { display: none; font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; }
+
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #fff !important; color: #111 !important; }
+    body::before { display: none; }
+    .wrapper { padding: 0.5cm 1cm; max-width: 100%; }
+
+    /* hide interactive elements */
+    .header-actions, #addForm, .presets-grid, .equip-fields,
+    .btn, .modal-overlay { display: none !important; }
+
+    header { border-bottom: 2px solid #1a55cc; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+
+    .logo { color: #1a55cc !important; text-shadow: none !important; }
+    .logo span { color: #111 !important; }
+    .tagline, .pdf-timestamp { color: #666 !important; }
+    .pdf-timestamp { display: block !important; }
+
+    .layout { display: block !important; }
+    .left-col, .right-col { display: block !important; width: 100% !important; }
+
+    .card {
+      background: #fff !important;
+      border: 1px solid #ccd6ec !important;
+      border-radius: 6px;
+      margin-bottom: 0.5cm;
+      page-break-inside: avoid;
+    }
+    .card-title { color: #1a55cc !important; }
+    .card-title .dot { background: #1a55cc !important; box-shadow: none !important; }
+
+    .equip-item { background: #f4f7ff !important; border-color: #ccd6ec !important; }
+    .equip-name { color: #111 !important; }
+    .equip-summary { color: #1a55cc !important; }
+
+    /* right-col params card: show only text values, hide sliders/inputs */
+    .params-card input[type=number],
+    .params-card input[type=range],
+    .slider-wrap { display: none !important; }
+    .params-card .field { margin-bottom: 0.4rem; }
+
+    .stat-label { color: #555 !important; }
+    .stat-value { color: #111 !important; }
+    .stat-value.accent, .stat-value.big { color: #1a55cc !important; text-shadow: none !important; }
+    .stat-row { border-bottom-color: #dde4f0 !important; }
+
+    .alert.ok    { background: #e8f0ff !important; border-color: #1a55cc !important; color: #1a55cc !important; }
+    .alert.error { background: #ffe8e8 !important; border-color: #cc2200 !important; color: #cc2200 !important; }
+    .alert.warn  { background: #fff7e0 !important; border-color: #996600 !important; color: #996600 !important; }
+    .suggestion  { background: #f4f7ff !important; border-color: #ccd6ec !important; color: #444 !important; }
+    .suggestion strong { color: #996600 !important; }
+
+    th { color: #1a55cc !important; border-bottom-color: #1a55cc !important; }
+    td { color: #111 !important; border-bottom-color: #eaeef8 !important; }
+    tfoot td { color: #1a55cc !important; border-top-color: #1a55cc !important; }
+
+    #tableCard { display: block !important; }
+    .slider-val { color: #1a55cc !important; }
+
+    .empty-state { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo-block">
+      <div class="logo">Solar<span>Calc</span></div>
+      <div class="tagline">Dimensionamento de banco de baterias · FV Híbrido</div>
+      <div class="pdf-timestamp" id="pdfTimestamp"></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" onclick="openLoad()">📂 Carregar</button>
+      <button class="btn" onclick="openSave()">💾 Salvar</button>
+      <button class="btn" onclick="exportPDF()">🖨 Exportar PDF</button>
+      <button class="btn primary" onclick="calcAll()">⚡ Calcular</button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- LEFT COLUMN -->
+    <div class="left-col">
+
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Adicionar Equipamento</div>
+        <div class="field">
+          <label>Pré-definidos</label>
+          <div class="presets-grid" id="presetsGrid"></div>
+        </div>
+        <div id="addForm">
+          <div class="row">
+            <div class="field">
+              <label>Nome do equipamento</label>
+              <input type="text" id="fname" placeholder="Ex: Geladeira">
+            </div>
+            <div class="field" style="max-width:80px">
+              <label>Qtd</label>
+              <input type="number" id="fqty" value="1" min="1">
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Potência</label>
+              <input type="number" id="fpow" placeholder="0" min="0" step="any">
+            </div>
+            <div class="field" style="max-width:90px">
+              <label>Unidade</label>
+              <select id="funit">
+                <option value="W">W</option>
+                <option value="kW">kW</option>
+                <option value="BTU">BTU</option>
+                <option value="CV">CV</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Horas/dia</label>
+              <input type="number" id="fhours" placeholder="0" min="0" max="24" step="0.5">
+            </div>
+          </div>
+          <button class="btn primary" onclick="addEquipment()" style="width:100%;justify-content:center;margin-top:0.25rem">
+            + Adicionar à lista
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span style="display:flex;align-items:center;gap:0.5rem"><span class="dot"></span>Lista de Equipamentos</span>
+          <button class="btn sm danger" onclick="clearAll()">🗑 Limpar tudo</button>
+        </div>
+        <div id="equipList" class="equip-list">
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+            </svg>
+            <p>Nenhum equipamento adicionado.<br>Use os pré-definidos ou o formulário acima.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="tableCard" style="display:none">
+        <div class="card-title"><span class="dot"></span>Tabela de Consumo</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Equipamento</th>
+                <th style="text-align:right">Pot. Total (W)</th>
+                <th style="text-align:right">Consumo (Wh/dia)</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+            <tfoot id="tableFoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <div class="card params-card">
+        <div class="card-title"><span class="dot"></span>Parâmetros do Sistema</div>
+        <div class="field">
+          <label>Autonomia desejada (dias)</label>
+          <input type="number" id="pAutonomy" value="1" min="0.5" step="0.5">
+          <div class="pdf-only" style="display:none" id="pAutonomyPrint"></div>
+        </div>
+        <div class="field">
+          <label>Eficiência do sistema (%)</label>
+          <div class="slider-wrap">
+            <input type="range" id="pEff" min="60" max="100" value="85" oninput="document.getElementById('effVal').textContent=this.value+'%'">
+          </div>
+          <div class="slider-val" id="effVal">85%</div>
+        </div>
+        <div class="field">
+          <label>Potência do inversor (kW)</label>
+          <input type="number" id="pInverter" placeholder="Ex: 5" min="0" step="0.1">
+        </div>
+      </div>
+
+      <div class="card" id="resultsCard">
+        <div class="card-title"><span class="dot"></span>Resultados</div>
+        <div class="stat-row">
+          <span class="stat-label">Potência instantânea</span>
+          <span class="stat-value accent" id="rPower">— W</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Consumo diário</span>
+          <span class="stat-value accent" id="rDaily">— kWh</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Consumo c/ eficiência</span>
+          <span class="stat-value" id="rDailyEff">— kWh</span>
+        </div>
+        <div class="stat-row" style="padding-top:1rem">
+          <span class="stat-label">Banco de baterias</span>
+          <span class="stat-value big" id="rBank">— kWh</span>
+        </div>
+        <div id="inverterAlert"></div>
+        <div id="inverterSuggestion"></div>
+      </div>
+
+      <div class="card" style="border-color: var(--accent-dim)">
+        <div class="card-title"><span class="dot"></span>Dica de leitura</div>
+        <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">
+          O banco de baterias considera consumo diário × autonomia ÷ eficiência do sistema.<br><br>
+          <strong style="color:var(--text)">Exemplo:</strong> 5 kWh/dia × 2 dias ÷ 0,85 ≈ <span style="color:var(--accent);font-family:var(--mono)">11,76 kWh</span> de banco.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal">
+    <h2>💾 Salvar Simulação</h2>
+    <div class="field">
+      <label>Nome da simulação</label>
+      <input type="text" id="saveName" placeholder="Ex: Casa de campo — verão">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Cancelar</button>
+      <button class="btn primary" onclick="doSave()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Load Modal -->
+<div class="modal-overlay" id="loadModal">
+  <div class="modal">
+    <h2>📂 Carregar Simulação</h2>
+    <ul class="save-list" id="saveList"></ul>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRESETS = [
+  { name: 'Geladeira',       qty: 1, pow: 300,   unit: 'W',   hours: 12  },
+  { name: 'Freezer',         qty: 1, pow: 300,   unit: 'W',   hours: 14  },
+  { name: 'AC 9000 BTU',     qty: 1, pow: 9000,  unit: 'BTU', hours: 8   },
+  { name: 'AC 12000 BTU',    qty: 1, pow: 12000, unit: 'BTU', hours: 8   },
+  { name: 'AC 18000 BTU',    qty: 1, pow: 18000, unit: 'BTU', hours: 8   },
+  { name: 'Lâmpada LED 10W', qty: 5, pow: 10,    unit: 'W',   hours: 6   },
+  { name: 'Lâmpada LED 30W', qty: 3, pow: 30,    unit: 'W',   hours: 6   },
+  { name: 'Chuveiro 5500W',  qty: 1, pow: 5500,  unit: 'W',   hours: 0.5 },
+  { name: 'Chuveiro 6000W',  qty: 1, pow: 6000,  unit: 'W',   hours: 0.5 },
+  { name: 'Bomba 1CV',       qty: 1, pow: 1,     unit: 'CV',  hours: 3   },
+  { name: 'Bomba 2CV',       qty: 1, pow: 2,     unit: 'CV',  hours: 3   },
+  { name: 'TV 50"',          qty: 1, pow: 120,   unit: 'W',   hours: 5   },
+  { name: 'Micro-ondas',     qty: 1, pow: 1200,  unit: 'W',   hours: 0.5 },
+  { name: 'Computador',      qty: 1, pow: 250,   unit: 'W',   hours: 8   },
+  { name: 'Ferro Elétrico',  qty: 1, pow: 1000,  unit: 'W',   hours: 0.5 },
+];
+
+let equipments = [];
+let idCount = 0;
+
+function toWatts(value, unit) {
+  switch(unit) {
+    case 'kW':  return value * 1000;
+    case 'BTU': return value * 0.293;
+    case 'CV':  return value * 735.5;
+    default:    return value;
+  }
+}
+
+function renderPresets() {
+  const grid = document.getElementById('presetsGrid');
+  grid.innerHTML = PRESETS.map(p =>
+    `<button class="preset-chip" onclick='fillPreset(${JSON.stringify(p).replace(/'/g,"&apos;")})'>${p.name}</button>`
+  ).join('');
+}
+
+function fillPreset(p) {
+  document.getElementById('fname').value  = p.name;
+  document.getElementById('fqty').value   = p.qty;
+  document.getElementById('fpow').value   = p.pow;
+  document.getElementById('funit').value  = p.unit;
+  document.getElementById('fhours').value = p.hours;
+  document.getElementById('fname').focus();
+}
+
+function addEquipment() {
+  const name  = document.getElementById('fname').value.trim();
+  const qty   = parseFloat(document.getElementById('fqty').value) || 1;
+  const pow   = parseFloat(document.getElementById('fpow').value);
+  const unit  = document.getElementById('funit').value;
+  const hours = parseFloat(document.getElementById('fhours').value);
+
+  if (!name)                     { alert('Insira o nome do equipamento.'); return; }
+  if (isNaN(pow) || pow < 0)     { alert('Insira uma potência válida.'); return; }
+  if (isNaN(hours) || hours < 0) { alert('Insira horas de uso válidas.'); return; }
+
+  const watts = toWatts(pow, unit);
+  const id = ++idCount;
+  equipments.push({ id, name, qty, pow, unit, hours, watts });
+
+  document.getElementById('fname').value  = '';
+  document.getElementById('fpow').value   = '';
+  document.getElementById('fhours').value = '';
+  document.getElementById('fqty').value   = 1;
+  document.getElementById('funit').value  = 'W';
+
+  renderList();
+  calcAll();
+}
+
+function renderList() {
+  const container = document.getElementById('equipList');
+  if (equipments.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+      </svg>
+      <p>Nenhum equipamento adicionado.<br>Use os pré-definidos ou o formulário acima.</p>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = equipments.map(e => {
+    const totalW  = e.qty * e.watts;
+    const totalWh = totalW * e.hours;
+    return `
+    <div class="equip-item" id="eq-${e.id}">
+      <div class="equip-header">
+        <div>
+          <div class="equip-name">${e.name}</div>
+          <div class="equip-summary">${e.qty}x · ${e.pow} ${e.unit} · ${e.hours}h/dia → ${totalW.toFixed(0)} W · ${totalWh.toFixed(0)} Wh/dia</div>
+        </div>
+        <button class="btn sm danger" onclick="removeEquip(${e.id})">✕</button>
+      </div>
+      <div class="equip-fields">
+        <div class="field">
+          <label>Nome</label>
+          <input type="text" value="${e.name}" onchange="updateField(${e.id},'name',this.value)">
+        </div>
+        <div class="field">
+          <label>Potência</label>
+          <input type="number" value="${e.pow}" min="0" step="any" onchange="updateField(${e.id},'pow',parseFloat(this.value)||0)">
+        </div>
+        <div class="field">
+          <label>Unidade</label>
+          <select onchange="updateField(${e.id},'unit',this.value)">
+            ${['W','kW','BTU','CV'].map(u => `<option ${e.unit===u?'selected':''}>${u}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Qtd</label>
+          <input type="number" value="${e.qty}" min="1" onchange="updateField(${e.id},'qty',parseFloat(this.value)||1)">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Horas/dia: <span style="color:var(--accent);font-family:var(--mono)">${e.hours}h</span></label>
+          <input type="range" min="0" max="24" step="0.5" value="${e.hours}"
+            oninput="updateField(${e.id},'hours',parseFloat(this.value));this.previousElementSibling.innerHTML='Horas/dia: <span style=color:var(--accent);font-family:var(--mono)>'+this.value+'h</span>'">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateField(id, field, value) {
+  const e = equipments.find(x => x.id === id);
+  if (!e) return;
+  e[field] = value;
+  if (field === 'pow' || field === 'unit') e.watts = toWatts(e.pow, e.unit);
+  const totalW  = e.qty * e.watts;
+  const totalWh = totalW * e.hours;
+  const el = document.querySelector(`#eq-${id} .equip-summary`);
+  if (el) el.textContent = `${e.qty}x · ${e.pow} ${e.unit} · ${e.hours}h/dia → ${totalW.toFixed(0)} W · ${totalWh.toFixed(0)} Wh/dia`;
+  calcAll();
+}
+
+function removeEquip(id) {
+  equipments = equipments.filter(x => x.id !== id);
+  renderList();
+  calcAll();
+}
+
+function clearAll() {
+  if (equipments.length === 0) return;
+  if (!confirm('Limpar todos os equipamentos?')) return;
+  equipments = [];
+  renderList();
+  calcAll();
+}
+
+function calcAll() {
+  const autonomy = parseFloat(document.getElementById('pAutonomy').value) || 1;
+  const eff      = parseFloat(document.getElementById('pEff').value) / 100 || 0.85;
+  const invKw    = parseFloat(document.getElementById('pInverter').value) || 0;
+
+  let totalPowerW = 0, totalWh = 0;
+  equipments.forEach(e => {
+    const pw = e.qty * e.watts;
+    totalPowerW += pw;
+    totalWh     += pw * e.hours;
+  });
+
+  const totalKwh = totalWh / 1000;
+  const dailyEff = totalKwh / eff;
+  const bankKwh  = dailyEff * autonomy;
+
+  document.getElementById('rPower').textContent    = equipments.length ? `${totalPowerW.toFixed(0)} W`   : '— W';
+  document.getElementById('rDaily').textContent    = equipments.length ? `${totalKwh.toFixed(2)} kWh`   : '— kWh';
+  document.getElementById('rDailyEff').textContent = equipments.length ? `${dailyEff.toFixed(2)} kWh`   : '— kWh';
+  document.getElementById('rBank').textContent     = equipments.length ? `${bankKwh.toFixed(2)} kWh`    : '— kWh';
+
+  const alertDiv = document.getElementById('inverterAlert');
+  const sugDiv   = document.getElementById('inverterSuggestion');
+
+  if (equipments.length === 0) { alertDiv.innerHTML = ''; sugDiv.innerHTML = ''; return; }
+
+  const totalKw = totalPowerW / 1000;
+
+  if (!invKw) {
+    alertDiv.innerHTML = `<div class="alert warn"><span class="alert-icon">⚠️</span>Insira a potência do inversor para verificação.</div>`;
+  } else if (totalKw > invKw) {
+    alertDiv.innerHTML = `<div class="alert error"><span class="alert-icon">❌</span>Potência das cargas (${totalKw.toFixed(2)} kW) excede a capacidade do inversor (${invKw} kW).</div>`;
+  } else {
+    const margin = ((invKw - totalKw) / invKw * 100).toFixed(0);
+    alertDiv.innerHTML = `<div class="alert ok"><span class="alert-icon">✅</span>Inversor compatível. Margem de ${margin}% (${(invKw - totalKw).toFixed(2)} kW disponíveis).</div>`;
+  }
+
+  const suggested = suggestedInverter(totalKw);
+  sugDiv.innerHTML = `<div class="suggestion">💡 Inversor sugerido: <strong>${suggested} kW</strong></div>`;
+
+  updateTable(totalPowerW, totalWh);
+}
+
+function suggestedInverter(kw) {
+  const sizes = [1.5, 2, 3, 3.5, 4, 5, 6, 7.5, 8, 10, 12, 15, 20];
+  return sizes.find(s => s >= kw * 1.25) || Math.ceil(kw * 1.25 * 2) / 2;
+}
+
+function updateTable(totalPowerW, totalWh) {
+  const tbody = document.getElementById('tableBody');
+  const tfoot = document.getElementById('tableFoot');
+  const card  = document.getElementById('tableCard');
+
+  if (equipments.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  tbody.innerHTML = equipments.map(e => {
+    const pw = e.qty * e.watts;
+    const wh = pw * e.hours;
+    return `<tr>
+      <td>${e.name} <span style="color:var(--text-dim);font-size:0.72rem">(${e.qty}×)</span></td>
+      <td class="td-num">${pw.toFixed(0)}</td>
+      <td class="td-num">${wh.toFixed(0)}</td>
+    </tr>`;
+  }).join('');
+
+  tfoot.innerHTML = `<tr>
+    <td>TOTAL</td>
+    <td class="td-num">${totalPowerW.toFixed(0)} W</td>
+    <td class="td-num">${totalWh.toFixed(0)} Wh</td>
+  </tr>`;
+}
+
+// ─── EXPORT PDF ───────────────────────────────────────────────────────────────
+function exportPDF() {
+  if (equipments.length === 0) { alert('Adicione equipamentos antes de exportar.'); return; }
+  // Ensure table is visible
+  document.getElementById('tableCard').style.display = 'block';
+  // Stamp timestamp
+  document.getElementById('pdfTimestamp').textContent =
+    'Relatório gerado em: ' + new Date().toLocaleString('pt-BR');
+  window.print();
+}
+
+// ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
+function getSaves() {
+  try { return JSON.parse(localStorage.getItem('solarCalcSaves') || '[]'); } catch { return []; }
+}
+function setSaves(arr) { localStorage.setItem('solarCalcSaves', JSON.stringify(arr)); }
+
+function openSave() {
+  document.getElementById('saveName').value = '';
+  document.getElementById('saveModal').classList.add('open');
+}
+function openLoad() {
+  const saves = getSaves();
+  const list  = document.getElementById('saveList');
+  if (saves.length === 0) {
+    list.innerHTML = '<li style="color:var(--text-muted);font-size:0.82rem;padding:0.5rem">Nenhuma simulação salva.</li>';
+  } else {
+    list.innerHTML = saves.map((s, i) => `
+      <li class="save-item">
+        <div onclick="loadSave(${i})" style="flex:1;cursor:pointer">
+          <div class="save-name">${s.name}</div>
+          <div class="save-date">${s.date}</div>
+        </div>
+        <div class="save-item-actions">
+          <button class="btn sm" onclick="loadSave(${i})">📂</button>
+          <button class="btn sm danger" onclick="deleteSave(${i})">✕</button>
+        </div>
+      </li>`).join('');
+  }
+  document.getElementById('loadModal').classList.add('open');
+}
+function closeModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+}
+
+function doSave() {
+  const name = document.getElementById('saveName').value.trim() || 'Simulação sem nome';
+  const saves = getSaves();
+  saves.unshift({
+    name,
+    date: new Date().toLocaleString('pt-BR'),
+    equipments: JSON.parse(JSON.stringify(equipments)),
+    params: {
+      autonomy: document.getElementById('pAutonomy').value,
+      eff:      document.getElementById('pEff').value,
+      inverter: document.getElementById('pInverter').value,
+    },
+    idCount
+  });
+  setSaves(saves);
+  closeModals();
+  showToast('Simulação salva!');
+}
+
+function loadSave(i) {
+  const s = getSaves()[i];
+  if (!s) return;
+  equipments = s.equipments;
+  idCount    = s.idCount || equipments.length;
+  document.getElementById('pAutonomy').value = s.params.autonomy;
+  document.getElementById('pEff').value      = s.params.eff;
+  document.getElementById('pInverter').value = s.params.inverter;
+  document.getElementById('effVal').textContent = s.params.eff + '%';
+  closeModals();
+  renderList();
+  calcAll();
+  showToast('Simulação carregada!');
+}
+
+function deleteSave(i) {
+  const saves = getSaves();
+  saves.splice(i, 1);
+  setSaves(saves);
+  openLoad();
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '1.5rem', right: '1.5rem',
+    background: 'var(--accent)', color: '#fff',
+    padding: '0.6rem 1.2rem', borderRadius: '8px',
+    fontWeight: '700', fontSize: '0.85rem',
+    zIndex: '999', animation: 'slideIn 0.2s ease',
+    fontFamily: 'var(--sans)'
+  });
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
+document.querySelectorAll('.modal-overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) closeModals(); })
+);
+['pAutonomy','pEff','pInverter'].forEach(id =>
+  document.getElementById(id).addEventListener('input', calcAll)
+);
+
+renderPresets();
+calcAll();
+</script>
+</body>
+</html>
