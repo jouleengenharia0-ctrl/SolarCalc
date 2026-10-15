@@ -3,923 +3,1375 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SolarCalc — Dimensionamento Fotovoltaico</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="light">
+<title>SolarCalc - Consumo e energia solar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0d14;
-    --surface: #111520;
-    --surface2: #161b2a;
-    --border: #252d45;
-    --accent: #3d8bff;
-    --accent-dim: #0f2247;
-    --danger: #ff4e4e;
-    --danger-dim: #3d1010;
-    --warn: #ffb84e;
-    --warn-dim: #3d2a10;
-    --text: #e8eef8;
-    --text-muted: #6a80aa;
-    --text-dim: #2d3d5c;
-    --radius: 10px;
-    --mono: 'Space Mono', monospace;
-    --sans: 'Syne', sans-serif;
+    --paper: #EAEEE9;
+    --surface: #FBFCFA;
+    --ink: #14221E;
+    --ink-soft: #485A53;
+    --muted: #66766E;
+    --line: #C4CDC6;
+    --line-soft: #DDE3DD;
+    --action: #0F5C47;
+    --action-hover: #0A4637;
+    --action-tint: #E1EDE8;
+    --signal: #F5B800;
+    --danger: #A3281F;
+    --danger-tint: #F8E5E2;
+    --warn: #7A4F00;
+    --warn-tint: #FBF0D5;
+    --radius: 4px;
+    --font-body: 'Barlow', 'Segoe UI', system-ui, sans-serif;
+    --font-display: 'Barlow Condensed', 'Barlow', 'Arial Narrow', sans-serif;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.3;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
-
-  header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-
-  .logo-block { display: flex; flex-direction: column; gap: 4px; }
-
-  .logo {
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-    line-height: 1;
-    color: var(--accent);
-    text-shadow: 0 0 30px rgba(61,139,255,0.35);
-  }
-  .logo span { color: var(--text); }
-
-  .tagline {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.55rem 1.1rem;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn.primary:hover { background: #5aa0ff; border-color: #5aa0ff; }
-  .btn.danger { color: var(--danger); border-color: var(--danger-dim); }
-  .btn.danger:hover { background: var(--danger-dim); border-color: var(--danger); }
-  .btn.sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
-
-  .layout { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start; }
-  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .card-title {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .card-title .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-  }
-
-  label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem; font-weight: 600; }
-
-  input, select {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 0.55rem 0.8rem;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    outline: none;
-    transition: border-color 0.15s;
-    appearance: none;
-  }
-  input:focus, select:focus { border-color: var(--accent); }
-  input::placeholder { color: var(--text-dim); }
-
-  .field { margin-bottom: 0.9rem; }
-  .row { display: flex; gap: 0.75rem; }
-  .row .field { flex: 1; margin-bottom: 0; }
-
-  .presets-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
-
-  .preset-chip {
-    padding: 0.3rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    background: transparent;
-    color: var(--text-muted);
-    transition: all 0.15s;
-    font-family: var(--sans);
-  }
-  .preset-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-
-  .equip-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
-  .equip-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    animation: slideIn 0.2s ease;
-    position: relative;
-  }
-  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-
-  .equip-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-  .equip-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
-  .equip-summary { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); margin-top: 2px; }
-
-  .equip-fields { display: grid; grid-template-columns: 1fr 1fr 80px 1fr; gap: 0.6rem; align-items: end; }
-  @media (max-width: 600px) { .equip-fields { grid-template-columns: 1fr 1fr; } }
-
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .stat-row:last-child { border-bottom: none; }
-  .stat-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
-  .stat-value { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--text); }
-  .stat-value.accent { color: var(--accent); }
-  .stat-value.big {
-    font-size: 1.5rem;
-    color: var(--accent);
-    text-shadow: 0 0 20px rgba(61,139,255,0.4);
-  }
-
-  .alert {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.9rem 1rem;
-    border-radius: var(--radius);
-    font-size: 0.82rem;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
     line-height: 1.5;
-    margin-top: 0.75rem;
-    font-weight: 600;
-  }
-  .alert.ok    { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); }
-  .alert.error { background: var(--danger-dim); border: 1px solid var(--danger); color: var(--danger); }
-  .alert.warn  { background: var(--warn-dim);   border: 1px solid var(--warn);   color: var(--warn); }
-  .alert-icon  { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-
-  .table-wrap { overflow-x: auto; margin-top: 0.5rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-  th {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    padding: 0.6rem 0.75rem;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-  }
-  td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #181f30; color: var(--text); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
-  .td-num { font-family: var(--mono); text-align: right; }
-  tfoot td { border-top: 2px solid var(--accent); font-weight: 700; color: var(--accent); font-family: var(--mono); }
-
-  .slider-wrap { position: relative; margin-top: 0.4rem; }
-  input[type=range] {
-    -webkit-appearance: none;
-    appearance: none;
-    padding: 0;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    cursor: pointer;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px rgba(61,139,255,0.6);
-    border: 2px solid var(--bg);
-    cursor: pointer;
-  }
-  .slider-val { font-family: var(--mono); font-size: 0.9rem; font-weight: 700; color: var(--accent); text-align: right; margin-top: 0.3rem; }
-
-  .suggestion {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-top: 0.75rem;
-    padding: 0.4rem 0.85rem;
-    border-radius: 20px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    font-weight: 600;
-  }
-  .suggestion strong { color: var(--warn); }
-
-  .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-dim); }
-  .empty-state svg { opacity: 0.3; margin-bottom: 0.75rem; }
-  .empty-state p { font-size: 0.85rem; }
-
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.75);
-    backdrop-filter: blur(4px);
-    z-index: 100;
-    display: flex; align-items: center; justify-content: center;
-    padding: 1rem;
-    opacity: 0; pointer-events: none; transition: opacity 0.2s;
-  }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.75rem;
-    width: 100%; max-width: 480px;
-    transform: translateY(10px); transition: transform 0.2s;
-  }
-  .modal-overlay.open .modal { transform: translateY(0); }
-  .modal h2 { font-size: 1.1rem; margin-bottom: 1rem; }
-  .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
-
-  .save-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 260px; overflow-y: auto; }
-  .save-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0.65rem 0.9rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    font-size: 0.82rem;
-  }
-  .save-item:hover { border-color: var(--accent); }
-  .save-item .save-name { font-weight: 700; }
-  .save-item .save-date { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); }
-  .save-item-actions { display: flex; gap: 0.4rem; }
-
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-  @media (max-width: 500px) {
-    .logo { font-size: 1.6rem; }
-    .card { padding: 1rem; }
+    -webkit-text-size-adjust: 100%;
   }
 
-  /* ── PDF PRINT STYLES ──────────────────────────────────────────────────────── */
-  .pdf-timestamp { display: none; font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; }
+  input, select, textarea, button { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
+
+  :focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
+
+  /* Cabeçalho */
+  .app-header { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+  .app-header-inner {
+    max-width: 1180px; margin: 0 auto; padding: 0 20px;
+    display: flex; align-items: center; gap: 24px; min-height: 64px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand-mark { width: 12px; height: 12px; background: var(--signal); border-radius: 50%; align-self: center; }
+  .brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; line-height: 1; }
+  .brand-sub { color: var(--muted); font-size: 0.9rem; }
+
+  .nav { display: flex; align-self: stretch; gap: 4px; margin-left: 12px; }
+  .nav button {
+    border: 0; background: none; padding: 0 16px; cursor: pointer; font-weight: 600; color: var(--ink-soft);
+    border-bottom: 3px solid transparent; margin-bottom: -1px;
+  }
+  .nav button:hover { color: var(--ink); }
+  .nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--action); }
+
+  .header-actions { margin-left: auto; display: flex; gap: 8px; }
+
+  /* Botões */
+  .btn {
+    min-height: 40px; padding: 8px 16px; border: 1px solid var(--ink-soft); border-radius: var(--radius);
+    background: var(--surface); color: var(--ink); font-weight: 600; cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .btn:hover { background: var(--line-soft); }
+  .btn.primary { background: var(--action); border-color: var(--action); color: #fff; }
+  .btn.primary:hover { background: var(--action-hover); border-color: var(--action-hover); }
+  .btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+  .btn.danger:hover { background: var(--danger-tint); }
+  .btn.sm { min-height: 34px; padding: 4px 12px; font-size: 0.9rem; }
+  .btn:disabled { opacity: 0.6; cursor: progress; }
+
+  /* Estrutura */
+  .container { max-width: 1180px; margin: 0 auto; padding: 28px 20px 64px; }
+  .page-head { margin-bottom: 22px; }
+  .page-head h1 { font-family: var(--font-display); font-size: clamp(1.9rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.05; }
+  .page-head p { color: var(--ink-soft); margin-top: 4px; max-width: 70ch; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 24px; align-items: start; }
+  .col-side { position: sticky; top: 84px; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 20px;
+  }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .panel h2 { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; line-height: 1.1; }
+  .panel h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; margin: 20px 0 10px; }
+  .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hint { color: var(--ink-soft); font-size: 0.9375rem; }
+
+  label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+  input, select, textarea {
+    width: 100%; min-height: 40px; padding: 7px 10px; background: #fff;
+    border: 1px solid #9AA79F; border-radius: var(--radius);
+  }
+  textarea { resize: vertical; line-height: 1.45; }
+  input::placeholder, textarea::placeholder { color: #6B7B73; }
+  input[type=number] { font-variant-numeric: tabular-nums; }
+
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px 16px; }
+  .unit-hint { color: var(--muted); font-size: 0.8125rem; margin-top: 4px; }
+
+  /* Presets */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: var(--radius); padding: 4px 10px;
+    font-size: 0.875rem; font-weight: 500; cursor: pointer; color: var(--ink-soft);
+  }
+  .chip:hover { border-color: var(--action); color: var(--action); }
+
+  /* Editor de equipamentos */
+  #eq-consumo, #eq-solar { container-type: inline-size; }
+  .eq { --cols: minmax(130px, 1fr) 54px 84px 78px 62px 62px 62px 76px 30px; }
+  .eq:not(.has-days) { --cols: minmax(130px, 1fr) 54px 84px 78px 62px 62px 76px 30px; }
+  .eq-head, .eq-row { display: grid; grid-template-columns: var(--cols); gap: 6px; align-items: center; }
+  .eq-row input[type=number] { padding-left: 6px; padding-right: 4px; -moz-appearance: textfield; appearance: textfield; }
+  .eq-row input[type=number]::-webkit-inner-spin-button, .eq-row input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .eq-head { font-size: 0.8125rem; font-weight: 600; color: var(--ink-soft); padding: 0 0 6px; border-bottom: 2px solid var(--ink); }
+  .eq-row { padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+  .eq-row input, .eq-row select { min-height: 38px; padding: 5px 8px; font-size: 0.9375rem; }
+  .eq-out { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .eq-row .est input, .eq-row input.est { background: var(--warn-tint); }
+  .eq .remove {
+    width: 34px; height: 34px; border: 1px solid transparent; border-radius: var(--radius);
+    background: none; color: var(--danger); font-size: 1.25rem; line-height: 1; cursor: pointer;
+  }
+  .eq .remove:hover { border-color: var(--danger); }
+  .empty { padding: 22px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--ink-soft); text-align: center; }
+
+  /* Resultados */
+  .hero-label { color: var(--ink-soft); font-weight: 500; }
+  .hero-value { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .hero-num { font-family: var(--font-body); font-weight: 600; font-size: 3.4rem; line-height: 1.1; letter-spacing: -0.01em; }
+  .hero-unit { color: var(--ink-soft); font-size: 1.1rem; font-weight: 500; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+  .tile { border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 10px 12px; background: #fff; }
+  .tile.wide { grid-column: 1 / -1; }
+  .tile-label { color: var(--ink-soft); font-size: 0.875rem; }
+  .tile-value { font-weight: 600; font-size: 1.35rem; line-height: 1.25; }
+  .tile-unit { color: var(--ink-soft); font-size: 0.9rem; font-weight: 500; margin-left: 4px; }
+  .tile-note { color: var(--muted); font-size: 0.8125rem; }
+
+  .rank-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 7px 0; }
+  .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9375rem; }
+  .rank-val { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 0.9375rem; }
+  .bar { grid-column: 1 / -1; height: 8px; background: var(--line-soft); }
+  .bar i { display: block; height: 100%; background: var(--action); border-radius: 0 4px 4px 0; min-width: 2px; }
+
+  .result-actions { display: grid; gap: 8px; margin-top: 20px; }
+
+  .alert { padding: 10px 12px; border-radius: var(--radius); font-size: 0.9375rem; margin-top: 12px; border-left: 4px solid; }
+  .alert strong { font-weight: 600; }
+  .alert.ok { background: var(--action-tint); border-color: var(--action); }
+  .alert.warn { background: var(--warn-tint); border-color: var(--warn); }
+  .alert.error { background: var(--danger-tint); border-color: var(--danger); }
+
+  .kv { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  .kv td { padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
+  .kv td:last-child { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kv tr:last-child td { border-bottom: 0; }
+
+  details { margin-top: 14px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p, details li { font-size: 0.9375rem; color: var(--ink-soft); margin-top: 6px; }
+  details ul { padding-left: 18px; }
+
+  /* Assistente de IA */
+  .ai-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .ai-msg { font-size: 0.9375rem; color: var(--ink-soft); }
+  .ai-msg.error { color: var(--danger); font-weight: 600; }
+  .key-status { font-size: 0.875rem; color: var(--ink-soft); }
+  .key-status.on { color: var(--action); font-weight: 600; }
+  .ai-settings .fields { margin-top: 10px; }
+  .ai-settings-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .preview { margin-top: 16px; border-top: 1px solid var(--line-soft); padding-top: 14px; }
+  .table-wrap { overflow-x: auto; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+  table.data th { text-align: right; font-size: 0.8125rem; font-weight: 600; color: var(--ink-soft); padding: 6px 8px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+  table.data td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  table.data th:first-child, table.data td:first-child { text-align: left; white-space: normal; }
+  table.data td.est { background: var(--warn-tint); }
+  .legend-est { display: inline-block; width: 12px; height: 12px; background: var(--warn-tint); border: 1px solid var(--warn); vertical-align: -1px; margin-right: 4px; }
+
+  /* Modais */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20, 34, 30, 0.45); z-index: 50; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 6px; padding: 24px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 14px; }
+  .modal .fields { grid-template-columns: 1fr; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .save-list { list-style: none; display: grid; gap: 8px; max-height: 320px; overflow-y: auto; }
+  .save-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .save-name { font-weight: 600; }
+  .save-date { color: var(--muted); font-size: 0.8125rem; }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: var(--radius); font-weight: 600; z-index: 99; }
+
+  /* Relatório (só aparece na impressão) */
+  .report { display: none; }
+
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
+    .col-side { position: static; }
+  }
+
+  /* Lista de equipamentos vira cartões quando o painel é estreito */
+  @container (max-width: 700px) {
+    .eq-head { display: none; }
+    .eq-row { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; gap: 10px; }
+    .eq-row .cell::before { content: attr(data-label); display: block; font-size: 0.8125rem; color: var(--ink-soft); font-weight: 600; margin-bottom: 2px; }
+    .eq-row .cell-name { grid-column: 1 / -1; }
+    .eq-row .cell-out { grid-column: 1 / 3; text-align: left; }
+    .eq-row .cell-out .eq-out { text-align: left; }
+    .eq-row .cell-remove { justify-self: end; align-self: end; }
+    .eq-row .cell-remove::before { content: none; }
+  }
+
+  @media (max-width: 860px) {
+    .nav { margin-left: 0; order: 3; width: 100%; }
+    .nav button { padding: 10px 14px; }
+    .header-actions { margin-left: auto; }
+    .brand-sub { display: none; }
+  }
+
+  @media (max-width: 520px) {
+    .container { padding: 20px 14px 48px; }
+    .panel { padding: 16px; }
+    .hero-num { font-size: 2.8rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn { transition: none; }
+  }
+
+  /* ---------- IMPRESSÃO / PDF ---------- */
+  @page { size: A4; margin: 14mm 14mm 16mm; @bottom-right { content: "Página " counter(page) " de " counter(pages); font-family: 'Barlow', 'Segoe UI', sans-serif; font-size: 8pt; color: #666; } }
 
   @media print {
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    body { background: #fff !important; color: #111 !important; }
-    body::before { display: none; }
-    .wrapper { padding: 0.5cm 1cm; max-width: 100%; }
-
-    /* hide interactive elements */
-    .header-actions, #addForm, .presets-grid, .equip-fields,
-    .btn, .modal-overlay { display: none !important; }
-
-    header { border-bottom: 2px solid #1a55cc; padding-bottom: 0.5rem; margin-bottom: 1rem; }
-
-    .logo { color: #1a55cc !important; text-shadow: none !important; }
-    .logo span { color: #111 !important; }
-    .tagline, .pdf-timestamp { color: #666 !important; }
-    .pdf-timestamp { display: block !important; }
-
-    .layout { display: block !important; }
-    .left-col, .right-col { display: block !important; width: 100% !important; }
-
-    .card {
-      background: #fff !important;
-      border: 1px solid #ccd6ec !important;
-      border-radius: 6px;
-      margin-bottom: 0.5cm;
-      page-break-inside: avoid;
-    }
-    .card-title { color: #1a55cc !important; }
-    .card-title .dot { background: #1a55cc !important; box-shadow: none !important; }
-
-    .equip-item { background: #f4f7ff !important; border-color: #ccd6ec !important; }
-    .equip-name { color: #111 !important; }
-    .equip-summary { color: #1a55cc !important; }
-
-    /* right-col params card: show only text values, hide sliders/inputs */
-    .params-card input[type=number],
-    .params-card input[type=range],
-    .slider-wrap { display: none !important; }
-    .params-card .field { margin-bottom: 0.4rem; }
-
-    .stat-label { color: #555 !important; }
-    .stat-value { color: #111 !important; }
-    .stat-value.accent, .stat-value.big { color: #1a55cc !important; text-shadow: none !important; }
-    .stat-row { border-bottom-color: #dde4f0 !important; }
-
-    .alert.ok    { background: #e8f0ff !important; border-color: #1a55cc !important; color: #1a55cc !important; }
-    .alert.error { background: #ffe8e8 !important; border-color: #cc2200 !important; color: #cc2200 !important; }
-    .alert.warn  { background: #fff7e0 !important; border-color: #996600 !important; color: #996600 !important; }
-    .suggestion  { background: #f4f7ff !important; border-color: #ccd6ec !important; color: #444 !important; }
-    .suggestion strong { color: #996600 !important; }
-
-    th { color: #1a55cc !important; border-bottom-color: #1a55cc !important; }
-    td { color: #111 !important; border-bottom-color: #eaeef8 !important; }
-    tfoot td { color: #1a55cc !important; border-top-color: #1a55cc !important; }
-
-    #tableCard { display: block !important; }
-    .slider-val { color: #1a55cc !important; }
-
-    .empty-state { display: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; color: #111; font-size: 10pt; }
+    .app, .modal-overlay, .toast { display: none !important; }
+    .report { display: block; }
+    .rp-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #14221E; padding-bottom: 8px; }
+    .rp-brand { font-family: var(--font-display); font-weight: 700; font-size: 20pt; line-height: 1; }
+    .rp-brand i { display: inline-block; width: 9px; height: 9px; background: #F5B800; border-radius: 50%; margin-right: 6px; }
+    .rp-title { text-align: right; }
+    .rp-title strong { font-family: var(--font-display); font-size: 15pt; display: block; line-height: 1.1; }
+    .rp-title span { color: #555; font-size: 9pt; }
+    .rp-meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; margin: 12px 0 14px; border: 1px solid #C4CDC6; }
+    .rp-meta div { padding: 6px 10px; border-bottom: 1px solid #DDE3DD; font-size: 9.5pt; }
+    .rp-meta div:nth-last-child(-n+2) { border-bottom: 0; }
+    .rp-meta b { color: #485A53; font-weight: 600; margin-right: 6px; }
+    .rp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .rp-kpi { border: 1px solid #C4CDC6; padding: 8px 10px; border-top: 3px solid #0F5C47; }
+    .rp-kpi span { display: block; font-size: 8.5pt; color: #485A53; }
+    .rp-kpi strong { font-size: 14pt; font-weight: 600; }
+    .rp-kpi small { font-size: 9pt; color: #485A53; font-weight: 500; margin-left: 3px; }
+    .report h2 { font-family: var(--font-display); font-size: 12.5pt; margin: 16px 0 6px; border-bottom: 1px solid #C4CDC6; padding-bottom: 3px; break-after: avoid; }
+    .report table { width: 100%; border-collapse: collapse; font-size: 8.5pt; font-variant-numeric: tabular-nums; }
+    .report th { background: #14221E; color: #fff; text-align: right; padding: 5px 6px; font-weight: 600; }
+    .report td { text-align: right; padding: 4px 6px; border-bottom: 1px solid #DDE3DD; }
+    .report th:first-child, .report td:first-child, .report th.l, .report td.l { text-align: left; }
+    .report tbody tr:nth-child(even) td { background: #F4F6F3; }
+    .report tfoot td { font-weight: 700; border-top: 2px solid #14221E; border-bottom: 0; background: #fff !important; }
+    .report tr { break-inside: avoid; }
+    .report thead { display: table-header-group; }
+    .report .note { font-size: 8.5pt; color: #444; margin-top: 6px; line-height: 1.45; }
+    .report .status { margin-top: 8px; padding: 6px 10px; border-left: 4px solid #0F5C47; background: #E1EDE8; font-size: 9pt; }
+    .report .status.warn { border-color: #7A4F00; background: #FBF0D5; }
+    .report .status.error { border-color: #A3281F; background: #F8E5E2; }
+    .rp-foot { margin-top: 18px; padding-top: 6px; border-top: 1px solid #C4CDC6; font-size: 8pt; color: #666; }
   }
 </style>
 </head>
 <body>
-<div class="wrapper">
 
-  <header>
-    <div class="logo-block">
-      <div class="logo">Solar<span>Calc</span></div>
-      <div class="tagline">Dimensionamento de banco de baterias · FV Híbrido</div>
-      <div class="pdf-timestamp" id="pdfTimestamp"></div>
-    </div>
-    <div class="header-actions">
-      <button class="btn" onclick="openLoad()">📂 Carregar</button>
-      <button class="btn" onclick="openSave()">💾 Salvar</button>
-      <button class="btn" onclick="exportPDF()">🖨 Exportar PDF</button>
-      <button class="btn primary" onclick="calcAll()">⚡ Calcular</button>
+<div class="app">
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">SolarCalc</span>
+        <span class="brand-sub">Consumo e energia solar</span>
+      </div>
+      <nav class="nav" role="tablist" aria-label="Calculadoras">
+        <button type="button" role="tab" data-page="consumo" aria-selected="true">Consumo mensal</button>
+        <button type="button" role="tab" data-page="solar" aria-selected="false">Solar com baterias</button>
+      </nav>
+      <div class="header-actions">
+        <button type="button" class="btn sm" id="btnLoad">Carregar</button>
+        <button type="button" class="btn sm" id="btnSave">Salvar</button>
+      </div>
     </div>
   </header>
 
-  <div class="layout">
+  <main class="container">
 
-    <!-- LEFT COLUMN -->
-    <div class="left-col">
+    <!-- ============ CALCULADORA DE CONSUMO ============ -->
+    <section id="page-consumo" class="page" role="tabpanel">
+      <div class="page-head">
+        <h1>Consumo mensal de energia</h1>
+        <p>Informe os equipamentos, a potência e as horas de uso para obter o consumo em kWh por mês e o custo estimado.</p>
+      </div>
+      <div class="layout">
+        <div class="col-main">
+          <div class="panel ai-panel" data-list="consumo"></div>
 
-      <div class="card">
-        <div class="card-title"><span class="dot"></span>Adicionar Equipamento</div>
-        <div class="field">
-          <label>Pré-definidos</label>
-          <div class="presets-grid" id="presetsGrid"></div>
-        </div>
-        <div id="addForm">
-          <div class="row">
-            <div class="field">
-              <label>Nome do equipamento</label>
-              <input type="text" id="fname" placeholder="Ex: Geladeira">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Equipamentos</h2>
+              <div class="panel-actions">
+                <button type="button" class="btn sm primary" data-add="consumo">Adicionar equipamento</button>
+                <button type="button" class="btn sm danger" data-clear="consumo">Limpar lista</button>
+              </div>
             </div>
-            <div class="field" style="max-width:80px">
-              <label>Qtd</label>
-              <input type="number" id="fqty" value="1" min="1">
+            <div class="chips" data-chips="consumo" aria-label="Equipamentos comuns"></div>
+            <div id="eq-consumo"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Premissas</h2></div>
+            <div class="fields">
+              <div>
+                <label for="c-tariff">Tarifa de energia (R$/kWh)</label>
+                <input type="number" id="c-tariff" min="0" step="0.01" placeholder="Ex: 0,95" data-bind="consumo.tariff">
+                <div class="unit-hint">Opcional. Use o valor com impostos da sua fatura.</div>
+              </div>
+              <div>
+                <label for="c-cop">COP do ar-condicionado</label>
+                <input type="number" id="c-cop" min="1" max="6" step="0.1" data-bind="conv.cop">
+                <div class="unit-hint">BTU/h é capacidade de refrigeração. Potência elétrica = capacidade ÷ COP.</div>
+              </div>
+              <div>
+                <label for="c-motor">Rendimento de motores CV/HP (%)</label>
+                <input type="number" id="c-motor" min="30" max="98" step="1" data-bind="conv.motorEff">
+                <div class="unit-hint">CV e HP são potência no eixo. Potência elétrica = eixo ÷ rendimento.</div>
+              </div>
             </div>
           </div>
-          <div class="row">
-            <div class="field">
-              <label>Potência</label>
-              <input type="number" id="fpow" placeholder="0" min="0" step="any">
+        </div>
+
+        <aside class="col-side">
+          <div class="panel">
+            <div class="hero-label">Consumo mensal</div>
+            <div class="hero-value"><span class="hero-num" id="c-month">0</span><span class="hero-unit">kWh/mês</span></div>
+            <div class="tiles">
+              <div class="tile"><div class="tile-label">Média diária</div><div class="tile-value"><span id="c-day">0</span><span class="tile-unit">kWh/dia</span></div></div>
+              <div class="tile"><div class="tile-label">Potência instalada</div><div class="tile-value"><span id="c-kw">0</span><span class="tile-unit">kW</span></div></div>
+              <div class="tile wide"><div class="tile-label">Custo estimado</div><div class="tile-value" id="c-cost">-</div><div class="tile-note" id="c-cost-note">Informe a tarifa para estimar o custo.</div></div>
             </div>
-            <div class="field" style="max-width:90px">
-              <label>Unidade</label>
-              <select id="funit">
-                <option value="W">W</option>
-                <option value="kW">kW</option>
-                <option value="BTU">BTU</option>
-                <option value="CV">CV</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Horas/dia</label>
-              <input type="number" id="fhours" placeholder="0" min="0" max="24" step="0.5">
+            <h3>Participação por equipamento</h3>
+            <div id="c-rank"></div>
+            <div id="c-alerts"></div>
+            <div class="result-actions">
+              <button type="button" class="btn primary" data-export="consumo">Exportar relatório (PDF)</button>
+              <button type="button" class="btn" id="btnToSolar">Usar no dimensionamento solar</button>
             </div>
           </div>
-          <button class="btn primary" onclick="addEquipment()" style="width:100%;justify-content:center;margin-top:0.25rem">
-            + Adicionar à lista
-          </button>
-        </div>
+        </aside>
       </div>
+    </section>
 
-      <div class="card">
-        <div class="card-title" style="justify-content:space-between">
-          <span style="display:flex;align-items:center;gap:0.5rem"><span class="dot"></span>Lista de Equipamentos</span>
-          <button class="btn sm danger" onclick="clearAll()">🗑 Limpar tudo</button>
-        </div>
-        <div id="equipList" class="equip-list">
-          <div class="empty-state">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-            </svg>
-            <p>Nenhum equipamento adicionado.<br>Use os pré-definidos ou o formulário acima.</p>
+    <!-- ============ CALCULADORA SOLAR COM BATERIAS ============ -->
+    <section id="page-solar" class="page" role="tabpanel" hidden>
+      <div class="page-head">
+        <h1>Solar com baterias</h1>
+        <p>Dimensiona banco de baterias, potência dos módulos e inversor a partir das cargas e das premissas do sistema.</p>
+      </div>
+      <div class="layout">
+        <div class="col-main">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Cargas do sistema</h2>
+              <div class="panel-actions">
+                <button type="button" class="btn sm" id="btnImport">Importar da calculadora de consumo</button>
+                <button type="button" class="btn sm primary" data-add="solar">Adicionar equipamento</button>
+                <button type="button" class="btn sm danger" data-clear="solar">Limpar lista</button>
+              </div>
+            </div>
+            <div class="chips" data-chips="solar" aria-label="Equipamentos comuns"></div>
+            <div id="eq-solar"></div>
+          </div>
+
+          <div class="panel ai-panel" data-list="solar"></div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Parâmetros do sistema</h2></div>
+            <div class="fields">
+              <div><label for="s-autonomy">Autonomia (dias)</label><input type="number" id="s-autonomy" min="0.5" step="0.5" data-bind="solar.autonomy"></div>
+              <div><label for="s-eff">Eficiência do sistema (%)</label><input type="number" id="s-eff" min="50" max="100" step="1" data-bind="solar.eff"><div class="unit-hint">Perdas de inversor, cabos e ciclo da bateria.</div></div>
+              <div><label for="s-dod">Profundidade de descarga (%)</label><input type="number" id="s-dod" min="20" max="100" step="5" data-bind="solar.dod"><div class="unit-hint">Lítio (LiFePO4): 80 a 90. Chumbo-ácido: 50.</div></div>
+              <div><label for="s-volt">Tensão do banco (V)</label>
+                <select id="s-volt" data-bind="solar.voltage"><option value="12">12</option><option value="24">24</option><option value="48">48</option><option value="96">96</option></select></div>
+              <div><label for="s-inv">Potência do inversor (kW)</label><input type="number" id="s-inv" min="0" step="0.1" placeholder="Ex: 5" data-bind="solar.inverterKw"></div>
+              <div><label for="s-simult">Simultaneidade das cargas (%)</label><input type="number" id="s-simult" min="10" max="100" step="5" data-bind="solar.simult"><div class="unit-hint">100% = todas ligadas ao mesmo tempo.</div></div>
+              <div><label for="s-hsp">Irradiação (HSP, kWh/m²/dia)</label><input type="number" id="s-hsp" min="2" max="8" step="0.1" data-bind="solar.hsp"><div class="unit-hint">Horas de sol pico do local. Nordeste: 5 a 6.</div></div>
+              <div><label for="s-pr">Desempenho dos módulos (%)</label><input type="number" id="s-pr" min="50" max="95" step="1" data-bind="solar.pr"><div class="unit-hint">Temperatura, sujeira e cabeamento CC.</div></div>
+              <div><label for="s-mod">Potência do módulo (Wp)</label><input type="number" id="s-mod" min="100" step="5" data-bind="solar.moduleW"></div>
+              <div><label for="s-cop">COP do ar-condicionado</label><input type="number" id="s-cop" min="1" max="6" step="0.1" data-bind="conv.cop"></div>
+              <div><label for="s-motor">Rendimento de motores CV/HP (%)</label><input type="number" id="s-motor" min="30" max="98" step="1" data-bind="conv.motorEff"></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="card" id="tableCard" style="display:none">
-        <div class="card-title"><span class="dot"></span>Tabela de Consumo</div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Equipamento</th>
-                <th style="text-align:right">Pot. Total (W)</th>
-                <th style="text-align:right">Consumo (Wh/dia)</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-            <tfoot id="tableFoot"></tfoot>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RIGHT COLUMN -->
-    <div class="right-col">
-
-      <div class="card params-card">
-        <div class="card-title"><span class="dot"></span>Parâmetros do Sistema</div>
-        <div class="field">
-          <label>Autonomia desejada (dias)</label>
-          <input type="number" id="pAutonomy" value="1" min="0.5" step="0.5">
-          <div class="pdf-only" style="display:none" id="pAutonomyPrint"></div>
-        </div>
-        <div class="field">
-          <label>Eficiência do sistema (%)</label>
-          <div class="slider-wrap">
-            <input type="range" id="pEff" min="60" max="100" value="85" oninput="document.getElementById('effVal').textContent=this.value+'%'">
+        <aside class="col-side">
+          <div class="panel">
+            <div class="hero-label">Banco de baterias (nominal)</div>
+            <div class="hero-value"><span class="hero-num" id="s-bank">0</span><span class="hero-unit">kWh</span></div>
+            <div class="tile-note" id="s-bank-note"></div>
+            <div class="tiles">
+              <div class="tile"><div class="tile-label">Consumo diário</div><div class="tile-value"><span id="s-day">0</span><span class="tile-unit">kWh</span></div></div>
+              <div class="tile"><div class="tile-label">Potência das cargas</div><div class="tile-value"><span id="s-peak">0</span><span class="tile-unit">kW</span></div></div>
+              <div class="tile"><div class="tile-label">Geração FV necessária</div><div class="tile-value"><span id="s-kwp">0</span><span class="tile-unit">kWp</span></div><div class="tile-note" id="s-mods"></div></div>
+              <div class="tile"><div class="tile-label">Inversor sugerido</div><div class="tile-value"><span id="s-inv-sug">-</span><span class="tile-unit">kW</span></div></div>
+            </div>
+            <div id="s-alerts"></div>
+            <details>
+              <summary>Como o cálculo é feito</summary>
+              <ul>
+                <li>Consumo diário = Σ (qtd × potência elétrica × horas × fator de uso).</li>
+                <li>Banco nominal = consumo diário × autonomia ÷ (eficiência × profundidade de descarga).</li>
+                <li>Capacidade em Ah = banco (Wh) ÷ tensão do banco.</li>
+                <li>Potência FV = (consumo diário ÷ eficiência) ÷ (HSP × desempenho dos módulos).</li>
+                <li>Inversor = potência das cargas × simultaneidade, com folga de 25%.</li>
+                <li>1 BTU/h = 0,29307 W (térmico); ar-condicionado: elétrica = térmica ÷ COP.</li>
+                <li>1 CV = 735,5 W e 1 HP = 745,7 W (eixo); elétrica = eixo ÷ rendimento.</li>
+              </ul>
+            </details>
+            <div class="result-actions">
+              <button type="button" class="btn primary" data-export="solar">Exportar relatório (PDF)</button>
+            </div>
           </div>
-          <div class="slider-val" id="effVal">85%</div>
-        </div>
-        <div class="field">
-          <label>Potência do inversor (kW)</label>
-          <input type="number" id="pInverter" placeholder="Ex: 5" min="0" step="0.1">
-        </div>
+        </aside>
       </div>
-
-      <div class="card" id="resultsCard">
-        <div class="card-title"><span class="dot"></span>Resultados</div>
-        <div class="stat-row">
-          <span class="stat-label">Potência instantânea</span>
-          <span class="stat-value accent" id="rPower">— W</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Consumo diário</span>
-          <span class="stat-value accent" id="rDaily">— kWh</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Consumo c/ eficiência</span>
-          <span class="stat-value" id="rDailyEff">— kWh</span>
-        </div>
-        <div class="stat-row" style="padding-top:1rem">
-          <span class="stat-label">Banco de baterias</span>
-          <span class="stat-value big" id="rBank">— kWh</span>
-        </div>
-        <div id="inverterAlert"></div>
-        <div id="inverterSuggestion"></div>
-      </div>
-
-      <div class="card" style="border-color: var(--accent-dim)">
-        <div class="card-title"><span class="dot"></span>Dica de leitura</div>
-        <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">
-          O banco de baterias considera consumo diário × autonomia ÷ eficiência do sistema.<br><br>
-          <strong style="color:var(--text)">Exemplo:</strong> 5 kWh/dia × 2 dias ÷ 0,85 ≈ <span style="color:var(--accent);font-family:var(--mono)">11,76 kWh</span> de banco.
-        </p>
-      </div>
-
-    </div>
-  </div>
+    </section>
+  </main>
 </div>
 
-<!-- Save Modal -->
+<!-- Modal: salvar -->
 <div class="modal-overlay" id="saveModal">
-  <div class="modal">
-    <h2>💾 Salvar Simulação</h2>
-    <div class="field">
-      <label>Nome da simulação</label>
-      <input type="text" id="saveName" placeholder="Ex: Casa de campo — verão">
-    </div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <h2 id="saveTitle">Salvar simulação</h2>
+    <div class="fields"><div><label for="saveName">Nome da simulação</label><input type="text" id="saveName" placeholder="Ex: Casa de campo - verão"></div></div>
     <div class="modal-actions">
-      <button class="btn" onclick="closeModals()">Cancelar</button>
-      <button class="btn primary" onclick="doSave()">Salvar</button>
+      <button type="button" class="btn" data-close>Cancelar</button>
+      <button type="button" class="btn primary" id="doSave">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- Load Modal -->
+<!-- Modal: carregar -->
 <div class="modal-overlay" id="loadModal">
-  <div class="modal">
-    <h2>📂 Carregar Simulação</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="loadTitle">
+    <h2 id="loadTitle">Carregar simulação</h2>
     <ul class="save-list" id="saveList"></ul>
+    <div class="modal-actions"><button type="button" class="btn" data-close>Fechar</button></div>
+  </div>
+</div>
+
+<!-- Modal: exportar -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <h2 id="exportTitle">Exportar relatório</h2>
+    <div class="fields">
+      <div><label for="rp-project">Projeto</label><input type="text" id="rp-project" placeholder="Ex: Residência - sistema híbrido"></div>
+      <div><label for="rp-client">Cliente</label><input type="text" id="rp-client"></div>
+      <div><label for="rp-author">Responsável</label><input type="text" id="rp-author"></div>
+      <div><label for="rp-notes">Observações</label><textarea id="rp-notes" rows="3"></textarea></div>
+    </div>
+    <p class="hint" style="margin-top:12px">Na janela de impressão, escolha "Salvar como PDF".</p>
     <div class="modal-actions">
-      <button class="btn" onclick="closeModals()">Fechar</button>
+      <button type="button" class="btn" data-close>Cancelar</button>
+      <button type="button" class="btn primary" id="doExport">Gerar relatório</button>
     </div>
   </div>
 </div>
+
+<div class="report" id="report"></div>
+
+<datalist id="aiModels">
+  <option value="gpt-4o-mini"></option>
+  <option value="gpt-4o"></option>
+  <option value="gpt-4.1-mini"></option>
+  <option value="gpt-4.1"></option>
+</datalist>
 
 <script>
-const PRESETS = [
-  { name: 'Geladeira',       qty: 1, pow: 300,   unit: 'W',   hours: 12  },
-  { name: 'Freezer',         qty: 1, pow: 300,   unit: 'W',   hours: 14  },
-  { name: 'AC 9000 BTU',     qty: 1, pow: 9000,  unit: 'BTU', hours: 8   },
-  { name: 'AC 12000 BTU',    qty: 1, pow: 12000, unit: 'BTU', hours: 8   },
-  { name: 'AC 18000 BTU',    qty: 1, pow: 18000, unit: 'BTU', hours: 8   },
-  { name: 'Lâmpada LED 10W', qty: 5, pow: 10,    unit: 'W',   hours: 6   },
-  { name: 'Lâmpada LED 30W', qty: 3, pow: 30,    unit: 'W',   hours: 6   },
-  { name: 'Chuveiro 5500W',  qty: 1, pow: 5500,  unit: 'W',   hours: 0.5 },
-  { name: 'Chuveiro 6000W',  qty: 1, pow: 6000,  unit: 'W',   hours: 0.5 },
-  { name: 'Bomba 1CV',       qty: 1, pow: 1,     unit: 'CV',  hours: 3   },
-  { name: 'Bomba 2CV',       qty: 1, pow: 2,     unit: 'CV',  hours: 3   },
-  { name: 'TV 50"',          qty: 1, pow: 120,   unit: 'W',   hours: 5   },
-  { name: 'Micro-ondas',     qty: 1, pow: 1200,  unit: 'W',   hours: 0.5 },
-  { name: 'Computador',      qty: 1, pow: 250,   unit: 'W',   hours: 8   },
-  { name: 'Ferro Elétrico',  qty: 1, pow: 1000,  unit: 'W',   hours: 0.5 },
-];
+(function () {
+  'use strict';
 
-let equipments = [];
-let idCount = 0;
+  /* ---------- Constantes e utilidades ---------- */
+  var BTU_H_TO_W = 0.29307107;   // 1 BTU/h em watts (térmico)
+  var CV_TO_W = 735.49875;       // 1 cv (métrico) em watts (mecânico)
+  var HP_TO_W = 745.69987;       // 1 hp (mecânico) em watts
+  var UNITS = ['W', 'kW', 'BTU/h', 'CV', 'HP'];
+  var OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+  var KEY_STORAGE = 'solarcalc.openai.key';
+  var MODEL_STORAGE = 'solarcalc.openai.model';
+  var SAVES_STORAGE = 'solarCalcSaves';
 
-function toWatts(value, unit) {
-  switch(unit) {
-    case 'kW':  return value * 1000;
-    case 'BTU': return value * 0.293;
-    case 'CV':  return value * 735.5;
-    default:    return value;
-  }
-}
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  var num = function (v, fb) {
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isFinite(n) ? n : (fb === undefined ? 0 : fb);
+  };
+  var clamp = function (n, lo, hi) { return Math.min(hi, Math.max(lo, n)); };
+  var fmt = function (n, d) {
+    d = d === undefined ? 2 : d;
+    return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  };
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) { /* sem armazenamento */ } }
+  };
 
-function renderPresets() {
-  const grid = document.getElementById('presetsGrid');
-  grid.innerHTML = PRESETS.map(p =>
-    `<button class="preset-chip" onclick='fillPreset(${JSON.stringify(p).replace(/'/g,"&apos;")})'>${p.name}</button>`
-  ).join('');
-}
+  var PRESETS = [
+    { name: 'Geladeira', qty: 1, pow: 150, unit: 'W', hours: 24, days: 30, duty: 35 },
+    { name: 'Freezer', qty: 1, pow: 200, unit: 'W', hours: 24, days: 30, duty: 35 },
+    { name: 'Ar-condicionado 9.000 BTU/h', qty: 1, pow: 9000, unit: 'BTU/h', hours: 8, days: 30, duty: 70 },
+    { name: 'Ar-condicionado 12.000 BTU/h', qty: 1, pow: 12000, unit: 'BTU/h', hours: 8, days: 30, duty: 70 },
+    { name: 'Ar-condicionado 18.000 BTU/h', qty: 1, pow: 18000, unit: 'BTU/h', hours: 8, days: 30, duty: 70 },
+    { name: 'Lâmpada LED 10 W', qty: 5, pow: 10, unit: 'W', hours: 5, days: 30, duty: 100 },
+    { name: 'Chuveiro elétrico 5.500 W', qty: 1, pow: 5500, unit: 'W', hours: 0.5, days: 30, duty: 100 },
+    { name: 'Bomba d\'água 1 CV', qty: 1, pow: 1, unit: 'CV', hours: 2, days: 30, duty: 100 },
+    { name: 'TV 50"', qty: 1, pow: 120, unit: 'W', hours: 5, days: 30, duty: 100 },
+    { name: 'Micro-ondas', qty: 1, pow: 1200, unit: 'W', hours: 0.5, days: 30, duty: 100 },
+    { name: 'Computador', qty: 1, pow: 250, unit: 'W', hours: 8, days: 30, duty: 100 },
+    { name: 'Ferro de passar', qty: 1, pow: 1000, unit: 'W', hours: 1, days: 8, duty: 100 },
+    { name: 'Máquina de lavar', qty: 1, pow: 500, unit: 'W', hours: 1, days: 12, duty: 100 },
+    { name: 'Ventilador de teto', qty: 1, pow: 70, unit: 'W', hours: 8, days: 30, duty: 100 },
+    { name: 'Roteador Wi-Fi', qty: 1, pow: 10, unit: 'W', hours: 24, days: 30, duty: 100 }
+  ];
 
-function fillPreset(p) {
-  document.getElementById('fname').value  = p.name;
-  document.getElementById('fqty').value   = p.qty;
-  document.getElementById('fpow').value   = p.pow;
-  document.getElementById('funit').value  = p.unit;
-  document.getElementById('fhours').value = p.hours;
-  document.getElementById('fname').focus();
-}
+  /* ---------- Estado ---------- */
+  var nextId = 1;
+  var state = {
+    conv: { cop: 3.2, motorEff: 75 },
+    report: { project: '', client: '', author: '', notes: '' },
+    consumo: { items: [], tariff: '' },
+    solar: { items: [], autonomy: 1, eff: 85, dod: 80, voltage: 48, inverterKw: '', simult: 100, hsp: 5, pr: 80, moduleW: 550 }
+  };
 
-function addEquipment() {
-  const name  = document.getElementById('fname').value.trim();
-  const qty   = parseFloat(document.getElementById('fqty').value) || 1;
-  const pow   = parseFloat(document.getElementById('fpow').value);
-  const unit  = document.getElementById('funit').value;
-  const hours = parseFloat(document.getElementById('fhours').value);
-
-  if (!name)                     { alert('Insira o nome do equipamento.'); return; }
-  if (isNaN(pow) || pow < 0)     { alert('Insira uma potência válida.'); return; }
-  if (isNaN(hours) || hours < 0) { alert('Insira horas de uso válidas.'); return; }
-
-  const watts = toWatts(pow, unit);
-  const id = ++idCount;
-  equipments.push({ id, name, qty, pow, unit, hours, watts });
-
-  document.getElementById('fname').value  = '';
-  document.getElementById('fpow').value   = '';
-  document.getElementById('fhours').value = '';
-  document.getElementById('fqty').value   = 1;
-  document.getElementById('funit').value  = 'W';
-
-  renderList();
-  calcAll();
-}
-
-function renderList() {
-  const container = document.getElementById('equipList');
-  if (equipments.length === 0) {
-    container.innerHTML = `<div class="empty-state">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-      </svg>
-      <p>Nenhum equipamento adicionado.<br>Use os pré-definidos ou o formulário acima.</p>
-    </div>`;
-    return;
+  function newItem(o) {
+    o = o || {};
+    return {
+      id: nextId++,
+      name: o.name || '',
+      qty: o.qty === undefined ? 1 : o.qty,
+      pow: o.pow === undefined ? '' : o.pow,
+      unit: UNITS.indexOf(o.unit) >= 0 ? o.unit : 'W',
+      hours: o.hours === undefined ? '' : o.hours,
+      days: o.days === undefined ? 30 : o.days,
+      duty: o.duty === undefined ? 100 : o.duty,
+      est: o.est || []
+    };
   }
 
-  container.innerHTML = equipments.map(e => {
-    const totalW  = e.qty * e.watts;
-    const totalWh = totalW * e.hours;
-    return `
-    <div class="equip-item" id="eq-${e.id}">
-      <div class="equip-header">
-        <div>
-          <div class="equip-name">${e.name}</div>
-          <div class="equip-summary">${e.qty}x · ${e.pow} ${e.unit} · ${e.hours}h/dia → ${totalW.toFixed(0)} W · ${totalWh.toFixed(0)} Wh/dia</div>
-        </div>
-        <button class="btn sm danger" onclick="removeEquip(${e.id})">✕</button>
-      </div>
-      <div class="equip-fields">
-        <div class="field">
-          <label>Nome</label>
-          <input type="text" value="${e.name}" onchange="updateField(${e.id},'name',this.value)">
-        </div>
-        <div class="field">
-          <label>Potência</label>
-          <input type="number" value="${e.pow}" min="0" step="any" onchange="updateField(${e.id},'pow',parseFloat(this.value)||0)">
-        </div>
-        <div class="field">
-          <label>Unidade</label>
-          <select onchange="updateField(${e.id},'unit',this.value)">
-            ${['W','kW','BTU','CV'].map(u => `<option ${e.unit===u?'selected':''}>${u}</option>`).join('')}
-          </select>
-        </div>
-        <div class="field">
-          <label>Qtd</label>
-          <input type="number" value="${e.qty}" min="1" onchange="updateField(${e.id},'qty',parseFloat(this.value)||1)">
-        </div>
-        <div class="field" style="grid-column:1/-1">
-          <label>Horas/dia: <span style="color:var(--accent);font-family:var(--mono)">${e.hours}h</span></label>
-          <input type="range" min="0" max="24" step="0.5" value="${e.hours}"
-            oninput="updateField(${e.id},'hours',parseFloat(this.value));this.previousElementSibling.innerHTML='Horas/dia: <span style=color:var(--accent);font-family:var(--mono)>'+this.value+'h</span>'">
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
+  /* ---------- Cálculos ---------- */
+  // Potência elétrica (W) de uma unidade do equipamento
+  function electricalW(pow, unit) {
+    pow = Math.max(0, num(pow));
+    var cop = Math.max(1, num(state.conv.cop, 3.2));
+    var eff = clamp(num(state.conv.motorEff, 75), 30, 100) / 100;
+    switch (unit) {
+      case 'kW': return pow * 1000;
+      case 'BTU/h': return pow * BTU_H_TO_W / cop;
+      case 'CV': return pow * CV_TO_W / eff;
+      case 'HP': return pow * HP_TO_W / eff;
+      default: return pow;
+    }
+  }
 
-function updateField(id, field, value) {
-  const e = equipments.find(x => x.id === id);
-  if (!e) return;
-  e[field] = value;
-  if (field === 'pow' || field === 'unit') e.watts = toWatts(e.pow, e.unit);
-  const totalW  = e.qty * e.watts;
-  const totalWh = totalW * e.hours;
-  const el = document.querySelector(`#eq-${id} .equip-summary`);
-  if (el) el.textContent = `${e.qty}x · ${e.pow} ${e.unit} · ${e.hours}h/dia → ${totalW.toFixed(0)} W · ${totalWh.toFixed(0)} Wh/dia`;
-  calcAll();
-}
+  function calcItem(it) {
+    var qty = Math.max(0, num(it.qty));
+    var unitW = electricalW(it.pow, it.unit);
+    var hours = clamp(num(it.hours), 0, 24);
+    var days = clamp(num(it.days, 30), 0, 31);
+    var duty = clamp(num(it.duty, 100), 0, 100) / 100;
+    var totalW = qty * unitW;
+    var whDay = totalW * hours * duty;
+    return { qty: qty, unitW: unitW, totalW: totalW, hours: hours, days: days, duty: duty, whDay: whDay, kwhMonth: whDay * days / 1000 };
+  }
 
-function removeEquip(id) {
-  equipments = equipments.filter(x => x.id !== id);
-  renderList();
-  calcAll();
-}
+  function isMotorLoad(it) {
+    return it.unit === 'CV' || it.unit === 'HP' || it.unit === 'BTU/h' ||
+      /bomba|compressor|motor|port[aã]o|ar[- ]?cond|geladeira|freezer/i.test(it.name);
+  }
 
-function clearAll() {
-  if (equipments.length === 0) return;
-  if (!confirm('Limpar todos os equipamentos?')) return;
-  equipments = [];
-  renderList();
-  calcAll();
-}
+  function totalsConsumo() {
+    var rows = state.consumo.items.map(function (it) { return { it: it, c: calcItem(it) }; });
+    var t = { rows: rows, kw: 0, kwhMonth: 0 };
+    rows.forEach(function (r) { t.kw += r.c.totalW / 1000; t.kwhMonth += r.c.kwhMonth; });
+    return t;
+  }
 
-function calcAll() {
-  const autonomy = parseFloat(document.getElementById('pAutonomy').value) || 1;
-  const eff      = parseFloat(document.getElementById('pEff').value) / 100 || 0.85;
-  const invKw    = parseFloat(document.getElementById('pInverter').value) || 0;
+  var INVERTER_SIZES = [1.5, 2, 3, 3.5, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30];
 
-  let totalPowerW = 0, totalWh = 0;
-  equipments.forEach(e => {
-    const pw = e.qty * e.watts;
-    totalPowerW += pw;
-    totalWh     += pw * e.hours;
+  function calcSolar() {
+    var s = state.solar;
+    var rows = s.items.map(function (it) { return { it: it, c: calcItem(it) }; });
+    var peakW = 0, whDay = 0, motorW = 0, motorCount = 0;
+    rows.forEach(function (r) {
+      peakW += r.c.totalW; whDay += r.c.whDay;
+      if (isMotorLoad(r.it) && r.c.totalW > 0) { motorW += r.c.totalW; motorCount++; }
+    });
+    var eta = clamp(num(s.eff, 85), 50, 100) / 100;
+    var dod = clamp(num(s.dod, 80), 20, 100) / 100;
+    var autonomy = Math.max(0.5, num(s.autonomy, 1));
+    var volt = Math.max(1, num(s.voltage, 48));
+    var hsp = Math.max(0.5, num(s.hsp, 5));
+    var pr = clamp(num(s.pr, 80), 30, 100) / 100;
+    var moduleW = Math.max(50, num(s.moduleW, 550));
+    var simult = clamp(num(s.simult, 100), 10, 100) / 100;
+
+    var kwhDay = whDay / 1000;
+    var kwhDayEff = kwhDay / eta;
+    var bankNominal = kwhDay * autonomy / (eta * dod);
+    var bankUsable = bankNominal * dod;
+    var ah = bankNominal * 1000 / volt;
+    var kwp = kwhDayEff / (hsp * pr);
+    var modules = kwp > 0 ? Math.ceil(kwp * 1000 / moduleW) : 0;
+    var peakKw = peakW / 1000 * simult;
+    var needKw = peakKw * 1.25;
+    var suggested = null;
+    if (peakKw > 0) {
+      suggested = INVERTER_SIZES.filter(function (x) { return x >= needKw; })[0] || Math.ceil(needKw * 2) / 2;
+    }
+    return {
+      rows: rows, peakW: peakW, peakKw: peakKw, kwhDay: kwhDay, kwhDayEff: kwhDayEff, bankNominal: bankNominal,
+      bankUsable: bankUsable, ah: ah, kwp: kwp, modules: modules, modulesKwp: modules * moduleW / 1000,
+      suggested: suggested, motorKw: motorW / 1000, motorCount: motorCount,
+      p: { eta: eta, dod: dod, autonomy: autonomy, volt: volt, hsp: hsp, pr: pr, moduleW: moduleW, simult: simult }
+    };
+  }
+
+  /* ---------- Editor de equipamentos ---------- */
+  var OUT_UNIT = { consumo: 'kWh/mês', solar: 'kWh/dia' };
+
+  function cell(label, cls, child) {
+    var d = document.createElement('div');
+    d.className = 'cell ' + (cls || '');
+    d.setAttribute('data-label', label);
+    d.appendChild(child);
+    return d;
+  }
+
+  function input(type, value, aria, attrs) {
+    var el = document.createElement('input');
+    el.type = type;
+    el.value = value === undefined || value === null ? '' : value;
+    el.setAttribute('aria-label', aria);
+    Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+    return el;
+  }
+
+  function buildEditor(listKey) {
+    var host = $('#eq-' + listKey);
+    var showDays = listKey === 'consumo';
+    var items = state[listKey].items;
+    host.innerHTML = '';
+    if (!items.length) {
+      host.innerHTML = '<div class="empty">Nenhum equipamento na lista. Use os atalhos acima, o botão "Adicionar equipamento" ou o assistente de IA.</div>';
+      return;
+    }
+    var wrap = document.createElement('div');
+    wrap.className = 'eq' + (showDays ? ' has-days' : '');
+    var head = '<div class="eq-head"><span>Equipamento</span><span>Qtd</span><span>Potência</span><span>Unidade</span><span>Horas/dia</span>' +
+      (showDays ? '<span>Dias/mês</span>' : '') + '<span>Uso (%)</span><span style="text-align:right">' + OUT_UNIT[listKey] + '</span><span></span></div>';
+    wrap.innerHTML = head;
+    items.forEach(function (it) { wrap.appendChild(buildRow(listKey, it, showDays)); });
+    host.appendChild(wrap);
+    updateOutputs();
+  }
+
+  function buildRow(listKey, it, showDays) {
+    var row = document.createElement('div');
+    row.className = 'eq-row';
+    row.setAttribute('data-id', it.id);
+    var isEst = function (f) { return it.est.indexOf(f) >= 0; };
+
+    function bind(el, field, parse, estKey) {
+      if (estKey && isEst(estKey)) el.classList.add('est');
+      el.addEventListener('input', function () {
+        it[field] = parse(el.value);
+        if (estKey) { el.classList.remove('est'); it.est = it.est.filter(function (x) { return x !== estKey; }); }
+        recalc();
+      });
+      return el;
+    }
+    var raw = function (v) { return v; };
+    var numOrEmpty = function (v) { return v === '' ? '' : num(v); };
+
+    var name = bind(input('text', it.name, 'Nome do equipamento', { placeholder: 'Nome do equipamento' }), 'name', raw);
+    var qty = bind(input('number', it.qty, 'Quantidade', { min: '0', step: '1' }), 'qty', numOrEmpty, 'qtd');
+    var pow = bind(input('number', it.pow, 'Potência', { min: '0', step: 'any' }), 'pow', numOrEmpty, 'potencia');
+    var unit = document.createElement('select');
+    unit.setAttribute('aria-label', 'Unidade de potência');
+    UNITS.forEach(function (u) {
+      var o = document.createElement('option'); o.value = u; o.textContent = u; if (u === it.unit) o.selected = true; unit.appendChild(o);
+    });
+    unit.addEventListener('change', function () { it.unit = unit.value; recalc(); });
+    var hours = bind(input('number', it.hours, 'Horas por dia', { min: '0', max: '24', step: '0.25' }), 'hours', numOrEmpty, 'horas_dia');
+    var days = bind(input('number', it.days, 'Dias por mês', { min: '0', max: '31', step: '1' }), 'days', numOrEmpty, 'dias_mes');
+    var duty = bind(input('number', it.duty, 'Fator de uso em porcentagem', { min: '1', max: '100', step: '5' }), 'duty', numOrEmpty, 'fator_uso');
+
+    var out = document.createElement('output');
+    out.className = 'eq-out';
+    out.setAttribute('data-out', it.id);
+    var rm = document.createElement('button');
+    rm.type = 'button'; rm.className = 'remove'; rm.textContent = '×';
+    rm.setAttribute('aria-label', 'Remover ' + (it.name || 'equipamento'));
+    rm.addEventListener('click', function () {
+      state[listKey].items = state[listKey].items.filter(function (x) { return x.id !== it.id; });
+      buildEditor(listKey);
+      recalc();
+    });
+
+    row.appendChild(cell('Equipamento', 'cell-name', name));
+    row.appendChild(cell('Qtd', '', qty));
+    row.appendChild(cell('Potência', '', pow));
+    row.appendChild(cell('Unidade', '', unit));
+    row.appendChild(cell('Horas/dia', '', hours));
+    if (showDays) row.appendChild(cell('Dias/mês', '', days));
+    row.appendChild(cell('Uso (%)', '', duty));
+    row.appendChild(cell(OUT_UNIT[listKey], 'cell-out', out));
+    row.appendChild(cell('', 'cell-remove', rm));
+    return row;
+  }
+
+  function updateOutputs() {
+    $$('output[data-out]').forEach(function (out) {
+      var id = parseInt(out.getAttribute('data-out'), 10);
+      var inConsumo = !!$('#eq-consumo').contains(out);
+      var list = inConsumo ? state.consumo.items : state.solar.items;
+      var it = list.filter(function (x) { return x.id === id; })[0];
+      if (!it) return;
+      var c = calcItem(it);
+      out.textContent = inConsumo ? fmt(c.kwhMonth, 1) : fmt(c.whDay / 1000, 2);
+    });
+  }
+
+  /* ---------- Resultados ---------- */
+  function setText(id, v) { $('#' + id).textContent = v; }
+
+  function renderConsumo() {
+    var t = totalsConsumo();
+    var tariff = num(state.consumo.tariff);
+    setText('c-month', fmt(t.kwhMonth, 1));
+    setText('c-day', fmt(t.kwhMonth / 30, 2));
+    setText('c-kw', fmt(t.kw, 2));
+    if (tariff > 0 && t.kwhMonth > 0) {
+      setText('c-cost', 'R$ ' + fmt(t.kwhMonth * tariff, 2) + ' por mês');
+      setText('c-cost-note', fmt(t.kwhMonth, 1) + ' kWh × R$ ' + fmt(tariff, 2) + '/kWh, sem bandeiras tarifárias.');
+    } else {
+      setText('c-cost', '-');
+      setText('c-cost-note', 'Informe a tarifa para estimar o custo.');
+    }
+
+    var rank = $('#c-rank');
+    if (!t.rows.length || t.kwhMonth <= 0) {
+      rank.innerHTML = '<p class="hint">Adicione equipamentos com potência e horas de uso.</p>';
+    } else {
+      var sorted = t.rows.slice().sort(function (a, b) { return b.c.kwhMonth - a.c.kwhMonth; });
+      var top = sorted.slice(0, 8), rest = sorted.slice(8);
+      var html = top.map(function (r) { return rankRow(r.it.name || 'Sem nome', r.c.kwhMonth, t.kwhMonth); }).join('');
+      if (rest.length) {
+        var sum = rest.reduce(function (a, r) { return a + r.c.kwhMonth; }, 0);
+        html += rankRow('Demais equipamentos (' + rest.length + ')', sum, t.kwhMonth);
+      }
+      rank.innerHTML = html;
+    }
+
+    var alerts = [];
+    t.rows.forEach(function (r) {
+      if (num(r.it.hours) > 24) alerts.push('"' + esc(r.it.name || 'Sem nome') + '" tem mais de 24 horas por dia.');
+    });
+    $('#c-alerts').innerHTML = alerts.map(function (a) { return '<div class="alert warn"><strong>Atenção:</strong> ' + a + '</div>'; }).join('');
+  }
+
+  function rankRow(name, kwh, total) {
+    var pct = total > 0 ? kwh / total * 100 : 0;
+    return '<div class="rank-row"><span class="rank-name" title="' + esc(name) + '">' + esc(name) + '</span>' +
+      '<span class="rank-val">' + fmt(kwh, 1) + ' kWh · ' + fmt(pct, 0) + '%</span>' +
+      '<div class="bar"><i style="width:' + clamp(pct, 0, 100).toFixed(1) + '%"></i></div></div>';
+  }
+
+  function inverterStatus(r) {
+    var invKw = num(state.solar.inverterKw);
+    if (!state.solar.items.length || r.peakKw <= 0) return null;
+    if (!invKw) return { level: 'warn', title: 'Atenção:', text: 'Informe a potência do inversor para verificar a compatibilidade.' };
+    if (r.peakKw > invKw) {
+      return { level: 'error', title: 'Inversor insuficiente:', text: 'as cargas (' + fmt(r.peakKw, 2) + ' kW com simultaneidade de ' + fmt(r.p.simult * 100, 0) + '%) excedem os ' + fmt(invKw, 2) + ' kW do inversor.' };
+    }
+    return { level: 'ok', title: 'Inversor compatível:', text: 'folga de ' + fmt((invKw - r.peakKw) / invKw * 100, 0) + '% (' + fmt(invKw - r.peakKw, 2) + ' kW disponíveis).' };
+  }
+
+  function renderSolar() {
+    var r = calcSolar();
+    var has = state.solar.items.length > 0 && r.kwhDay > 0;
+    setText('s-bank', has ? fmt(r.bankNominal, 2) : '0');
+    setText('s-bank-note', has ? 'Utilizável: ' + fmt(r.bankUsable, 2) + ' kWh · ' + fmt(r.ah, 0) + ' Ah em ' + fmt(r.p.volt, 0) + ' V' : '');
+    setText('s-day', fmt(r.kwhDay, 2));
+    setText('s-peak', fmt(r.peakKw, 2));
+    setText('s-kwp', has ? fmt(r.kwp, 2) : '0');
+    setText('s-mods', has ? r.modules + ' módulos de ' + fmt(r.p.moduleW, 0) + ' Wp (' + fmt(r.modulesKwp, 2) + ' kWp)' : '');
+    setText('s-inv-sug', r.suggested ? fmt(r.suggested, 1) : '-');
+
+    var html = '';
+    var st = inverterStatus(r);
+    if (st) html += '<div class="alert ' + st.level + '"><strong>' + st.title + '</strong> ' + esc(st.text) + '</div>';
+    if (r.motorCount > 0) {
+      html += '<div class="alert warn"><strong>Partida de motores:</strong> há ' + r.motorCount + ' carga(s) com motor ou compressor (' + fmt(r.motorKw, 2) +
+        ' kW). Elas podem exigir de 3 a 6 vezes a corrente nominal na partida; confira a capacidade de surto do inversor.</div>';
+    }
+    $('#s-alerts').innerHTML = html;
+  }
+
+  function recalc() {
+    updateOutputs();
+    renderConsumo();
+    renderSolar();
+  }
+
+  /* ---------- Vínculo dos campos de parâmetros ---------- */
+  function getPath(path) {
+    var p = path.split('.');
+    return state[p[0]][p[1]];
+  }
+  function setPath(path, v) {
+    var p = path.split('.');
+    state[p[0]][p[1]] = v;
+  }
+  function syncBindings() {
+    $$('[data-bind]').forEach(function (el) {
+      var v = getPath(el.getAttribute('data-bind'));
+      el.value = v === undefined ? '' : v;
+    });
+  }
+  $$('[data-bind]').forEach(function (el) {
+    var evt = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(evt, function () {
+      var path = el.getAttribute('data-bind');
+      var v = el.value === '' ? '' : num(el.value);
+      setPath(path, v);
+      $$('[data-bind="' + path + '"]').forEach(function (other) { if (other !== el) other.value = el.value; });
+      recalc();
+    });
   });
 
-  const totalKwh = totalWh / 1000;
-  const dailyEff = totalKwh / eff;
-  const bankKwh  = dailyEff * autonomy;
+  /* ---------- Atalhos, adicionar, limpar ---------- */
+  $$('[data-chips]').forEach(function (host) {
+    var key = host.getAttribute('data-chips');
+    PRESETS.forEach(function (p) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.textContent = p.name;
+      b.addEventListener('click', function () {
+        state[key].items.push(newItem(p));
+        buildEditor(key); recalc();
+      });
+      host.appendChild(b);
+    });
+  });
 
-  document.getElementById('rPower').textContent    = equipments.length ? `${totalPowerW.toFixed(0)} W`   : '— W';
-  document.getElementById('rDaily').textContent    = equipments.length ? `${totalKwh.toFixed(2)} kWh`   : '— kWh';
-  document.getElementById('rDailyEff').textContent = equipments.length ? `${dailyEff.toFixed(2)} kWh`   : '— kWh';
-  document.getElementById('rBank').textContent     = equipments.length ? `${bankKwh.toFixed(2)} kWh`    : '— kWh';
+  $$('[data-add]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var key = b.getAttribute('data-add');
+      state[key].items.push(newItem({}));
+      buildEditor(key); recalc();
+      var rows = $$('#eq-' + key + ' .eq-row');
+      var last = rows[rows.length - 1];
+      if (last) last.querySelector('input').focus();
+    });
+  });
 
-  const alertDiv = document.getElementById('inverterAlert');
-  const sugDiv   = document.getElementById('inverterSuggestion');
+  $$('[data-clear]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var key = b.getAttribute('data-clear');
+      if (!state[key].items.length) return;
+      if (!confirm('Limpar todos os equipamentos desta lista?')) return;
+      state[key].items = [];
+      buildEditor(key); recalc();
+    });
+  });
 
-  if (equipments.length === 0) { alertDiv.innerHTML = ''; sugDiv.innerHTML = ''; return; }
-
-  const totalKw = totalPowerW / 1000;
-
-  if (!invKw) {
-    alertDiv.innerHTML = `<div class="alert warn"><span class="alert-icon">⚠️</span>Insira a potência do inversor para verificação.</div>`;
-  } else if (totalKw > invKw) {
-    alertDiv.innerHTML = `<div class="alert error"><span class="alert-icon">❌</span>Potência das cargas (${totalKw.toFixed(2)} kW) excede a capacidade do inversor (${invKw} kW).</div>`;
-  } else {
-    const margin = ((invKw - totalKw) / invKw * 100).toFixed(0);
-    alertDiv.innerHTML = `<div class="alert ok"><span class="alert-icon">✅</span>Inversor compatível. Margem de ${margin}% (${(invKw - totalKw).toFixed(2)} kW disponíveis).</div>`;
+  function cloneItems(items) {
+    return items.map(function (it) {
+      return newItem({ name: it.name, qty: it.qty, pow: it.pow, unit: it.unit, hours: it.hours, days: it.days, duty: it.duty, est: it.est.slice() });
+    });
   }
 
-  const suggested = suggestedInverter(totalKw);
-  sugDiv.innerHTML = `<div class="suggestion">💡 Inversor sugerido: <strong>${suggested} kW</strong></div>`;
-
-  updateTable(totalPowerW, totalWh);
-}
-
-function suggestedInverter(kw) {
-  const sizes = [1.5, 2, 3, 3.5, 4, 5, 6, 7.5, 8, 10, 12, 15, 20];
-  return sizes.find(s => s >= kw * 1.25) || Math.ceil(kw * 1.25 * 2) / 2;
-}
-
-function updateTable(totalPowerW, totalWh) {
-  const tbody = document.getElementById('tableBody');
-  const tfoot = document.getElementById('tableFoot');
-  const card  = document.getElementById('tableCard');
-
-  if (equipments.length === 0) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
-
-  tbody.innerHTML = equipments.map(e => {
-    const pw = e.qty * e.watts;
-    const wh = pw * e.hours;
-    return `<tr>
-      <td>${e.name} <span style="color:var(--text-dim);font-size:0.72rem">(${e.qty}×)</span></td>
-      <td class="td-num">${pw.toFixed(0)}</td>
-      <td class="td-num">${wh.toFixed(0)}</td>
-    </tr>`;
-  }).join('');
-
-  tfoot.innerHTML = `<tr>
-    <td>TOTAL</td>
-    <td class="td-num">${totalPowerW.toFixed(0)} W</td>
-    <td class="td-num">${totalWh.toFixed(0)} Wh</td>
-  </tr>`;
-}
-
-// ─── EXPORT PDF ───────────────────────────────────────────────────────────────
-function exportPDF() {
-  if (equipments.length === 0) { alert('Adicione equipamentos antes de exportar.'); return; }
-  // Ensure table is visible
-  document.getElementById('tableCard').style.display = 'block';
-  // Stamp timestamp
-  document.getElementById('pdfTimestamp').textContent =
-    'Relatório gerado em: ' + new Date().toLocaleString('pt-BR');
-  window.print();
-}
-
-// ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
-function getSaves() {
-  try { return JSON.parse(localStorage.getItem('solarCalcSaves') || '[]'); } catch { return []; }
-}
-function setSaves(arr) { localStorage.setItem('solarCalcSaves', JSON.stringify(arr)); }
-
-function openSave() {
-  document.getElementById('saveName').value = '';
-  document.getElementById('saveModal').classList.add('open');
-}
-function openLoad() {
-  const saves = getSaves();
-  const list  = document.getElementById('saveList');
-  if (saves.length === 0) {
-    list.innerHTML = '<li style="color:var(--text-muted);font-size:0.82rem;padding:0.5rem">Nenhuma simulação salva.</li>';
-  } else {
-    list.innerHTML = saves.map((s, i) => `
-      <li class="save-item">
-        <div onclick="loadSave(${i})" style="flex:1;cursor:pointer">
-          <div class="save-name">${s.name}</div>
-          <div class="save-date">${s.date}</div>
-        </div>
-        <div class="save-item-actions">
-          <button class="btn sm" onclick="loadSave(${i})">📂</button>
-          <button class="btn sm danger" onclick="deleteSave(${i})">✕</button>
-        </div>
-      </li>`).join('');
+  function importToSolar() {
+    if (!state.consumo.items.length) { toast('A lista de consumo está vazia.'); return; }
+    if (state.solar.items.length && !confirm('Substituir as cargas atuais da calculadora solar?')) return;
+    state.solar.items = cloneItems(state.consumo.items);
+    buildEditor('solar'); recalc();
+    showPage('solar');
+    toast('Cargas importadas da calculadora de consumo.');
   }
-  document.getElementById('loadModal').classList.add('open');
-}
-function closeModals() {
-  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
-}
+  $('#btnToSolar').addEventListener('click', importToSolar);
+  $('#btnImport').addEventListener('click', importToSolar);
 
-function doSave() {
-  const name = document.getElementById('saveName').value.trim() || 'Simulação sem nome';
-  const saves = getSaves();
-  saves.unshift({
-    name,
-    date: new Date().toLocaleString('pt-BR'),
-    equipments: JSON.parse(JSON.stringify(equipments)),
-    params: {
-      autonomy: document.getElementById('pAutonomy').value,
-      eff:      document.getElementById('pEff').value,
-      inverter: document.getElementById('pInverter').value,
-    },
-    idCount
+  /* ---------- Navegação entre calculadoras ---------- */
+  function showPage(page) {
+    if (page !== 'solar') page = 'consumo';
+    $$('.page').forEach(function (p) { p.hidden = p.id !== 'page-' + page; });
+    $$('.nav button').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-page') === page)); });
+    try { history.replaceState(null, '', '#' + page); } catch (e) { /* ignora */ }
+  }
+  $$('.nav button').forEach(function (b) {
+    b.addEventListener('click', function () { showPage(b.getAttribute('data-page')); });
   });
-  setSaves(saves);
-  closeModals();
-  showToast('Simulação salva!');
-}
+  function currentPage() { return $('#page-solar').hidden ? 'consumo' : 'solar'; }
 
-function loadSave(i) {
-  const s = getSaves()[i];
-  if (!s) return;
-  equipments = s.equipments;
-  idCount    = s.idCount || equipments.length;
-  document.getElementById('pAutonomy').value = s.params.autonomy;
-  document.getElementById('pEff').value      = s.params.eff;
-  document.getElementById('pInverter').value = s.params.inverter;
-  document.getElementById('effVal').textContent = s.params.eff + '%';
-  closeModals();
-  renderList();
-  calcAll();
-  showToast('Simulação carregada!');
-}
+  /* ---------- Toast e modais ---------- */
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg; t.setAttribute('role', 'status');
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+  function openModal(id) { $('#' + id).classList.add('open'); }
+  function closeModals() { $$('.modal-overlay').forEach(function (m) { m.classList.remove('open'); }); }
+  $$('[data-close]').forEach(function (b) { b.addEventListener('click', closeModals); });
+  $$('.modal-overlay').forEach(function (o) { o.addEventListener('click', function (e) { if (e.target === o) closeModals(); }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModals(); });
 
-function deleteSave(i) {
-  const saves = getSaves();
-  saves.splice(i, 1);
-  setSaves(saves);
-  openLoad();
-}
+  /* ---------- Salvar e carregar ---------- */
+  function getSaves() {
+    try { return JSON.parse(store.get(SAVES_STORAGE) || '[]'); } catch (e) { return []; }
+  }
+  function setSaves(a) { return store.set(SAVES_STORAGE, JSON.stringify(a)); }
 
-function showToast(msg) {
-  const t = document.createElement('div');
-  t.textContent = msg;
-  Object.assign(t.style, {
-    position: 'fixed', bottom: '1.5rem', right: '1.5rem',
-    background: 'var(--accent)', color: '#fff',
-    padding: '0.6rem 1.2rem', borderRadius: '8px',
-    fontWeight: '700', fontSize: '0.85rem',
-    zIndex: '999', animation: 'slideIn 0.2s ease',
-    fontFamily: 'var(--sans)'
+  $('#btnSave').addEventListener('click', function () { $('#saveName').value = ''; openModal('saveModal'); $('#saveName').focus(); });
+  $('#doSave').addEventListener('click', function () {
+    var saves = getSaves();
+    saves.unshift({
+      version: 2,
+      name: $('#saveName').value.trim() || 'Simulação sem nome',
+      date: new Date().toLocaleString('pt-BR'),
+      state: JSON.parse(JSON.stringify({ conv: state.conv, consumo: state.consumo, solar: state.solar, report: state.report }))
+    });
+    closeModals();
+    toast(setSaves(saves) ? 'Simulação salva.' : 'Não foi possível salvar neste navegador.');
   });
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
-}
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
-document.querySelectorAll('.modal-overlay').forEach(o =>
-  o.addEventListener('click', e => { if (e.target === o) closeModals(); })
-);
-['pAutonomy','pEff','pInverter'].forEach(id =>
-  document.getElementById(id).addEventListener('input', calcAll)
-);
+  function renderSaveList() {
+    var saves = getSaves();
+    var list = $('#saveList');
+    if (!saves.length) { list.innerHTML = '<li class="hint">Nenhuma simulação salva.</li>'; return; }
+    list.innerHTML = saves.map(function (s, i) {
+      return '<li class="save-item"><div><div class="save-name">' + esc(s.name) + '</div><div class="save-date">' + esc(s.date) + '</div></div>' +
+        '<div class="panel-actions"><button type="button" class="btn sm" data-load="' + i + '">Carregar</button>' +
+        '<button type="button" class="btn sm danger" data-del="' + i + '" aria-label="Excluir ' + esc(s.name) + '">Excluir</button></div></li>';
+    }).join('');
+  }
+  $('#btnLoad').addEventListener('click', function () { renderSaveList(); openModal('loadModal'); });
+  $('#saveList').addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.hasAttribute('data-load')) loadSave(parseInt(t.getAttribute('data-load'), 10));
+    if (t.hasAttribute('data-del')) {
+      var saves = getSaves(); saves.splice(parseInt(t.getAttribute('data-del'), 10), 1); setSaves(saves); renderSaveList();
+    }
+  });
 
-renderPresets();
-calcAll();
+  function loadSave(i) {
+    var s = getSaves()[i];
+    if (!s) return;
+    if (s.version === 2 && s.state) {
+      state.conv = Object.assign({ cop: 3.2, motorEff: 75 }, s.state.conv);
+      state.report = Object.assign({ project: '', client: '', author: '', notes: '' }, s.state.report);
+      state.consumo = Object.assign({ items: [], tariff: '' }, s.state.consumo);
+      state.solar = Object.assign({}, state.solar, s.state.solar);
+    } else {
+      // Formato antigo: só equipamentos e parâmetros da calculadora de baterias
+      var oldUnit = function (u) { return u === 'BTU' ? 'BTU/h' : u; };
+      state.solar.items = (s.equipments || []).map(function (e) {
+        return { name: e.name, qty: e.qty, pow: e.pow, unit: oldUnit(e.unit), hours: e.hours };
+      });
+      if (s.params) {
+        state.solar.autonomy = num(s.params.autonomy, 1);
+        state.solar.eff = num(s.params.eff, 85);
+        state.solar.inverterKw = s.params.inverter === '' ? '' : num(s.params.inverter);
+      }
+    }
+    ['consumo', 'solar'].forEach(function (k) {
+      state[k].items = (state[k].items || []).map(function (it) { return newItem(it); });
+      buildEditor(k);
+    });
+    syncBindings();
+    recalc();
+    closeModals();
+    toast('Simulação carregada.');
+  }
+
+  /* ---------- Relatório ---------- */
+  function openExport(page) {
+    $('#doExport').setAttribute('data-page', page);
+    $('#rp-project').value = state.report.project;
+    $('#rp-client').value = state.report.client;
+    $('#rp-author').value = state.report.author;
+    $('#rp-notes').value = state.report.notes;
+    openModal('exportModal');
+  }
+  $$('[data-export]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var page = b.getAttribute('data-export');
+      if (!state[page].items.length) { toast('Adicione equipamentos antes de exportar.'); return; }
+      openExport(page);
+    });
+  });
+  $('#doExport').addEventListener('click', function () {
+    state.report.project = $('#rp-project').value.trim();
+    state.report.client = $('#rp-client').value.trim();
+    state.report.author = $('#rp-author').value.trim();
+    state.report.notes = $('#rp-notes').value.trim();
+    var page = $('#doExport').getAttribute('data-page') || currentPage();
+    $('#report').innerHTML = buildReport(page);
+    closeModals();
+    setTimeout(function () { window.print(); }, 50);
+  });
+
+  function rpMeta() {
+    var r = state.report;
+    var cells = [
+      ['Projeto', r.project], ['Cliente', r.client], ['Responsável', r.author],
+      ['Data', new Date().toLocaleDateString('pt-BR')]
+    ];
+    return '<div class="rp-meta">' + cells.map(function (c) {
+      return '<div><b>' + c[0] + '</b>' + esc(c[1] || 'Não informado') + '</div>';
+    }).join('') + '</div>';
+  }
+  function rpHead(title, subtitle) {
+    return '<div class="rp-head"><div class="rp-brand"><i></i>SolarCalc</div><div class="rp-title"><strong>' + esc(title) + '</strong><span>' + esc(subtitle) + '</span></div></div>';
+  }
+  function rpKpi(label, value, unit) {
+    return '<div class="rp-kpi"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong>' + (unit ? '<small>' + esc(unit) + '</small>' : '') + '</div>';
+  }
+  function rpFoot() {
+    return '<div class="rp-foot">Relatório gerado pelo SolarCalc em ' + new Date().toLocaleString('pt-BR') +
+      '. Valores estimados a partir das premissas informadas; não substituem projeto elétrico.</div>';
+  }
+  function rpNotes() {
+    return state.report.notes ? '<h2>Observações</h2><p class="note">' + esc(state.report.notes).replace(/\n/g, '<br>') + '</p>' : '';
+  }
+  function unitLabel(it) { return fmt(num(it.pow), num(it.pow) % 1 ? 1 : 0) + ' ' + it.unit; }
+
+  function buildReport(page) {
+    return page === 'solar' ? reportSolar() : reportConsumo();
+  }
+
+  function reportConsumo() {
+    var t = totalsConsumo();
+    var tariff = num(state.consumo.tariff);
+    var sorted = t.rows.slice().sort(function (a, b) { return b.c.kwhMonth - a.c.kwhMonth; });
+    var body = sorted.map(function (r) {
+      var share = t.kwhMonth > 0 ? r.c.kwhMonth / t.kwhMonth * 100 : 0;
+      return '<tr><td>' + esc(r.it.name || 'Sem nome') + '</td><td>' + fmt(r.c.qty, 0) + '</td><td>' + esc(unitLabel(r.it)) + '</td><td>' + fmt(r.c.unitW, 0) +
+        '</td><td>' + fmt(r.c.hours, 2) + '</td><td>' + fmt(r.c.days, 0) + '</td><td>' + fmt(r.c.duty * 100, 0) + '</td><td>' + fmt(r.c.kwhMonth, 1) + '</td><td>' + fmt(share, 1) + '</td></tr>';
+    }).join('');
+    var html = rpHead('Relatório de consumo mensal', 'Estimativa por equipamento') + rpMeta();
+    html += '<div class="rp-kpis">' +
+      rpKpi('Consumo mensal', fmt(t.kwhMonth, 1), 'kWh/mês') +
+      rpKpi('Média diária', fmt(t.kwhMonth / 30, 2), 'kWh/dia') +
+      rpKpi('Potência instalada', fmt(t.kw, 2), 'kW') +
+      rpKpi('Custo estimado', tariff > 0 ? 'R$ ' + fmt(t.kwhMonth * tariff, 2) : 'Não informado', tariff > 0 ? '/mês' : '') + '</div>';
+    html += '<h2>Consumo por equipamento</h2><table><thead><tr><th>Equipamento</th><th>Qtd</th><th>Potência informada</th><th>Potência elétrica (W)</th><th>Horas/dia</th><th>Dias/mês</th><th>Uso (%)</th><th>kWh/mês</th><th>% do total</th></tr></thead><tbody>' +
+      body + '</tbody><tfoot><tr><td colspan="7">Total</td><td>' + fmt(t.kwhMonth, 1) + '</td><td>100,0</td></tr></tfoot></table>';
+    html += '<h2>Premissas e fórmulas</h2><table><tbody>' +
+      '<tr><td>Consumo mensal do equipamento (kWh)</td><td class="l">qtd × potência elétrica (kW) × horas/dia × fator de uso × dias/mês</td></tr>' +
+      '<tr><td>Ar-condicionado (BTU/h)</td><td class="l">1 BTU/h = 0,29307 W térmicos; potência elétrica = capacidade ÷ COP (COP = ' + fmt(num(state.conv.cop), 1) + ')</td></tr>' +
+      '<tr><td>Motores (CV, HP)</td><td class="l">1 CV = 735,5 W e 1 HP = 745,7 W no eixo; potência elétrica = eixo ÷ rendimento (' + fmt(num(state.conv.motorEff), 0) + '%)</td></tr>' +
+      (tariff > 0 ? '<tr><td>Tarifa de energia</td><td class="l">R$ ' + fmt(tariff, 2) + '/kWh, sem bandeiras tarifárias</td></tr>' : '') +
+      '</tbody></table>' + rpNotes() + rpFoot();
+    return html;
+  }
+
+  function reportSolar() {
+    var r = calcSolar();
+    var st = inverterStatus(r);
+    var s = state.solar;
+    var body = r.rows.slice().sort(function (a, b) { return b.c.whDay - a.c.whDay; }).map(function (x) {
+      return '<tr><td>' + esc(x.it.name || 'Sem nome') + '</td><td>' + fmt(x.c.qty, 0) + '</td><td>' + esc(unitLabel(x.it)) + '</td><td>' + fmt(x.c.totalW, 0) +
+        '</td><td>' + fmt(x.c.hours, 2) + '</td><td>' + fmt(x.c.duty * 100, 0) + '</td><td>' + fmt(x.c.whDay / 1000, 2) + '</td></tr>';
+    }).join('');
+    var invKw = num(s.inverterKw);
+    var html = rpHead('Dimensionamento solar com baterias', 'Banco de baterias, geração FV e inversor') + rpMeta();
+    html += '<div class="rp-kpis">' +
+      rpKpi('Banco nominal', fmt(r.bankNominal, 2), 'kWh') +
+      rpKpi('Geração FV', fmt(r.kwp, 2), 'kWp') +
+      rpKpi('Consumo diário', fmt(r.kwhDay, 2), 'kWh/dia') +
+      rpKpi('Inversor sugerido', r.suggested ? fmt(r.suggested, 1) : '-', 'kW') + '</div>';
+    html += '<h2>Cargas consideradas</h2><table><thead><tr><th>Equipamento</th><th>Qtd</th><th>Potência informada</th><th>Potência elétrica total (W)</th><th>Horas/dia</th><th>Uso (%)</th><th>kWh/dia</th></tr></thead><tbody>' +
+      body + '</tbody><tfoot><tr><td colspan="3">Total</td><td>' + fmt(r.peakW, 0) + '</td><td></td><td></td><td>' + fmt(r.kwhDay, 2) + '</td></tr></tfoot></table>';
+    html += '<h2>Dimensionamento</h2><table><thead><tr><th>Item</th><th>Resultado</th><th class="l">Cálculo</th></tr></thead><tbody>' +
+      '<tr><td>Consumo diário com perdas</td><td>' + fmt(r.kwhDayEff, 2) + ' kWh</td><td class="l">' + fmt(r.kwhDay, 2) + ' ÷ ' + fmt(r.p.eta, 2) + '</td></tr>' +
+      '<tr><td>Banco de baterias nominal</td><td>' + fmt(r.bankNominal, 2) + ' kWh</td><td class="l">' + fmt(r.kwhDay, 2) + ' × ' + fmt(r.p.autonomy, 1) + ' dia(s) ÷ (' + fmt(r.p.eta, 2) + ' × ' + fmt(r.p.dod, 2) + ')</td></tr>' +
+      '<tr><td>Banco utilizável</td><td>' + fmt(r.bankUsable, 2) + ' kWh</td><td class="l">nominal × profundidade de descarga</td></tr>' +
+      '<tr><td>Capacidade do banco</td><td>' + fmt(r.ah, 0) + ' Ah</td><td class="l">' + fmt(r.bankNominal * 1000, 0) + ' Wh ÷ ' + fmt(r.p.volt, 0) + ' V</td></tr>' +
+      '<tr><td>Potência FV necessária</td><td>' + fmt(r.kwp, 2) + ' kWp</td><td class="l">' + fmt(r.kwhDayEff, 2) + ' ÷ (' + fmt(r.p.hsp, 1) + ' HSP × ' + fmt(r.p.pr, 2) + ')</td></tr>' +
+      '<tr><td>Módulos</td><td>' + r.modules + ' × ' + fmt(r.p.moduleW, 0) + ' Wp</td><td class="l">' + fmt(r.modulesKwp, 2) + ' kWp instalados</td></tr>' +
+      '<tr><td>Potência das cargas</td><td>' + fmt(r.peakKw, 2) + ' kW</td><td class="l">' + fmt(r.peakW / 1000, 2) + ' kW × simultaneidade ' + fmt(r.p.simult * 100, 0) + '%</td></tr>' +
+      '<tr><td>Inversor sugerido</td><td>' + (r.suggested ? fmt(r.suggested, 1) + ' kW' : '-') + '</td><td class="l">potência das cargas × 1,25</td></tr>' +
+      (invKw ? '<tr><td>Inversor informado</td><td>' + fmt(invKw, 2) + ' kW</td><td class="l"></td></tr>' : '') +
+      '</tbody></table>';
+    if (st) html += '<div class="status ' + st.level + '"><b>' + esc(st.title) + '</b> ' + esc(st.text) + '</div>';
+    if (r.motorCount > 0) {
+      html += '<div class="status warn"><b>Partida de motores:</b> ' + r.motorCount + ' carga(s) com motor ou compressor (' + fmt(r.motorKw, 2) +
+        ' kW) podem exigir de 3 a 6 vezes a corrente nominal na partida. Confira a capacidade de surto do inversor.</div>';
+    }
+    html += '<h2>Premissas</h2><p class="note">Eficiência do sistema ' + fmt(r.p.eta * 100, 0) + '%; profundidade de descarga ' + fmt(r.p.dod * 100, 0) +
+      '%; banco de ' + fmt(r.p.volt, 0) + ' V; irradiação de ' + fmt(r.p.hsp, 1) + ' HSP; desempenho dos módulos ' + fmt(r.p.pr * 100, 0) +
+      '%; COP do ar-condicionado ' + fmt(num(state.conv.cop), 1) + '; rendimento de motores ' + fmt(num(state.conv.motorEff), 0) + '%.</p>' + rpNotes() + rpFoot();
+    return html;
+  }
+
+  /* ---------- Assistente de IA ---------- */
+  var SYSTEM_PROMPT = [
+    'Você é um assistente de engenharia elétrica que monta listas de cargas para cálculo de consumo de energia no Brasil.',
+    'O usuário descreve equipamentos em português, em texto livre. Converta a descrição em uma lista estruturada.',
+    'Regras:',
+    '1. Use exatamente os valores informados pelo usuário (quantidade, potência, horas, dias).',
+    '2. Quando um dado não foi informado, estime um valor típico de uso residencial/comercial no Brasil e liste o nome do campo estimado em "estimado".',
+    '3. "unidade" deve ser uma destas: W, kW, BTU/h, CV, HP. Para ar-condicionado informado em BTU, devolva a capacidade em BTU/h (não converta para watts). Para motores em CV ou HP, devolva o valor da plaqueta.',
+    '4. "horas_dia" é o tempo médio ligado por dia (0 a 24). "dias_mes" é quantos dias por mês o equipamento é usado (0 a 31; padrão 30).',
+    '5. "fator_uso" é a porcentagem do tempo ligado em que o equipamento realmente consome a potência nominal (1 a 100): resistências e iluminação = 100; compressores (geladeira, freezer, ar-condicionado) = 30 a 70.',
+    '6. Não invente equipamentos que o usuário não citou. Agrupe itens idênticos em uma linha com "qtd".',
+    '7. Se algo for ambíguo, escolha a interpretação mais provável e registre o motivo em "avisos".',
+    'Responda SOMENTE com JSON neste formato:',
+    '{"equipamentos":[{"nome":"string","qtd":1,"potencia":0,"unidade":"W","horas_dia":0,"dias_mes":30,"fator_uso":100,"estimado":["potencia"],"obs":"string curta opcional"}],"avisos":["string"]}',
+    'Campos possíveis em "estimado": qtd, potencia, horas_dia, dias_mes, fator_uso.'
+  ].join('\n');
+
+  var aiPreview = { consumo: null, solar: null };
+  var FIELD_MAP = { qtd: 'qtd', potencia: 'potencia', horas_dia: 'horas_dia', dias_mes: 'dias_mes', fator_uso: 'fator_uso' };
+
+  function normUnit(u) {
+    var s = String(u || '').toLowerCase().replace(/\s+/g, '');
+    if (s === 'w' || s === 'watt' || s === 'watts') return 'W';
+    if (s === 'kw' || s === 'quilowatt' || s === 'quilowatts') return 'kW';
+    if (s.indexOf('btu') === 0) return 'BTU/h';
+    if (s === 'cv') return 'CV';
+    if (s === 'hp') return 'HP';
+    return null;
+  }
+
+  // Lê números em texto no formato brasileiro: "12.000" = 12000 e "0,75" = 0.75
+  function numBR(v, fb) {
+    if (typeof v === 'string') {
+      var s = v.trim();
+      if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+      else s = s.replace(',', '.');
+      return num(s, fb);
+    }
+    return num(v, fb);
+  }
+
+  function normalizeAiItem(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var name = String(raw.nome || raw.name || '').trim().slice(0, 80);
+    var unit = normUnit(raw.unidade || raw.unit);
+    var pow = numBR(raw.potencia !== undefined ? raw.potencia : raw.pow, NaN);
+    if (!name || !unit || !isFinite(pow) || pow <= 0 || pow > 1e6) return null;
+    var est = Array.isArray(raw.estimado) ? raw.estimado.map(String).filter(function (f) { return FIELD_MAP[f]; }) : [];
+    return {
+      name: name,
+      qty: clamp(Math.round(numBR(raw.qtd !== undefined ? raw.qtd : raw.qty, 1)), 1, 999),
+      pow: pow,
+      unit: unit,
+      hours: clamp(numBR(raw.horas_dia !== undefined ? raw.horas_dia : raw.hours, 0), 0, 24),
+      days: clamp(Math.round(numBR(raw.dias_mes !== undefined ? raw.dias_mes : raw.days, 30)), 0, 31),
+      duty: clamp(Math.round(numBR(raw.fator_uso !== undefined ? raw.fator_uso : raw.duty, 100)), 1, 100),
+      est: est,
+      obs: String(raw.obs || '').slice(0, 120)
+    };
+  }
+
+  function parseAiJson(text) {
+    try { return JSON.parse(text); } catch (e) { /* tenta extrair o objeto */ }
+    var a = text.indexOf('{'), b = text.lastIndexOf('}');
+    if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch (e2) { /* falha abaixo */ } }
+    return null;
+  }
+
+  function aiRequest(userText, key, model, withTemperature, signal) {
+    var body = {
+      model: model,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userText }
+      ]
+    };
+    if (withTemperature) body.temperature = 0.2;
+    return fetch(OPENAI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify(body),
+      signal: signal
+    });
+  }
+
+  async function askAI(userText) {
+    var key = store.get(KEY_STORAGE);
+    var model = store.get(MODEL_STORAGE) || 'gpt-4o-mini';
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 60000);
+    try {
+      var res = await aiRequest(userText, key, model, true, ctrl.signal);
+      if (res.status === 400) {
+        var peek = await res.clone().json().catch(function () { return {}; });
+        var msg = peek && peek.error && peek.error.message || '';
+        if (/temperature/i.test(msg)) res = await aiRequest(userText, key, model, false, ctrl.signal);
+      }
+      if (!res.ok) {
+        var err = await res.json().catch(function () { return {}; });
+        var detail = err && err.error && err.error.message ? err.error.message : 'Erro ' + res.status;
+        if (res.status === 401) throw new Error('Chave da API inválida ou sem permissão. Verifique a chave nas configurações.');
+        if (res.status === 429) throw new Error('Limite de uso ou saldo da API esgotado: ' + detail);
+        throw new Error(detail);
+      }
+      var data = await res.json();
+      var content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      var parsed = content ? parseAiJson(content) : null;
+      if (!parsed || !Array.isArray(parsed.equipamentos)) throw new Error('A resposta da IA veio em formato inesperado. Tente descrever de outra forma.');
+      var items = parsed.equipamentos.map(normalizeAiItem).filter(Boolean);
+      if (!items.length) throw new Error('A IA não identificou equipamentos com potência válida no texto.');
+      return { items: items, avisos: Array.isArray(parsed.avisos) ? parsed.avisos.map(String).slice(0, 5) : [] };
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error('A IA demorou demais para responder. Tente novamente.');
+      if (e instanceof TypeError) throw new Error('Não foi possível conectar à API. Verifique a internet.');
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function buildAiPanel(host) {
+    var key = host.getAttribute('data-list');
+    host.innerHTML =
+      '<div class="panel-head"><h2>Assistente de IA</h2><span class="key-status" data-role="status"></span></div>' +
+      '<p class="hint">Descreva os equipamentos em texto livre. A IA monta a lista com potência, horas e dias de uso; você confere antes de adicionar.</p>' +
+      '<div style="margin-top:12px"><label for="ai-text-' + key + '">Descrição dos equipamentos</label>' +
+      '<textarea id="ai-text-' + key + '" data-role="text" rows="4" placeholder="Ex: 3 ar-condicionados de 12000 BTU ligados 8 horas por dia, geladeira duplex, 10 lâmpadas LED de 9 W por 5 horas, chuveiro de 5500 W por 30 minutos, bomba de 1 cv 2 horas por dia"></textarea></div>' +
+      '<div class="ai-actions"><button type="button" class="btn primary" data-role="run">Montar lista com IA</button><span class="ai-msg" data-role="msg" role="status"></span></div>' +
+      '<div data-role="preview"></div>' +
+      '<details class="ai-settings" data-role="settings"><summary>Chave da API e modelo</summary>' +
+      '<div class="fields"><div><label for="ai-key-' + key + '">Chave da API OpenAI</label>' +
+      '<input type="password" id="ai-key-' + key + '" data-role="key" autocomplete="off" spellcheck="false" placeholder="sk-..."></div>' +
+      '<div><label for="ai-model-' + key + '">Modelo</label><input type="text" id="ai-model-' + key + '" data-role="model" list="aiModels"></div></div>' +
+      '<p class="hint" style="margin-top:10px">A chave fica salva apenas neste navegador (armazenamento local) e é enviada somente à OpenAI. Não use em computador compartilhado e defina um limite de gasto na sua conta.</p>' +
+      '<div class="ai-settings-actions"><button type="button" class="btn sm primary" data-role="save-key">Salvar chave</button>' +
+      '<button type="button" class="btn sm danger" data-role="remove-key">Remover chave</button></div></details>';
+
+    var q = function (role) { return host.querySelector('[data-role="' + role + '"]'); };
+    var msg = function (text, isError) { var m = q('msg'); m.textContent = text || ''; m.className = 'ai-msg' + (isError ? ' error' : ''); };
+
+    q('run').addEventListener('click', async function () {
+      var text = q('text').value.trim();
+      if (!text) { msg('Descreva os equipamentos para a IA montar a lista.', true); return; }
+      if (!store.get(KEY_STORAGE)) {
+        q('settings').open = true;
+        q('key').focus();
+        msg('Cadastre a chave da API para usar o assistente.', true);
+        return;
+      }
+      q('run').disabled = true;
+      msg('Analisando a descrição...');
+      try {
+        aiPreview[key] = await askAI(text);
+        renderAiPreview(host, key);
+        msg('Lista montada. Confira os valores antes de adicionar.');
+      } catch (e) {
+        aiPreview[key] = null;
+        q('preview').innerHTML = '';
+        msg(e.message || 'Falha ao consultar a IA.', true);
+      } finally {
+        q('run').disabled = false;
+      }
+    });
+
+    q('save-key').addEventListener('click', function () {
+      var k = q('key').value.trim();
+      var model = q('model').value.trim() || 'gpt-4o-mini';
+      if (k) {
+        if (!store.set(KEY_STORAGE, k)) { msg('Não foi possível salvar neste navegador.', true); return; }
+      }
+      store.set(MODEL_STORAGE, model);
+      refreshAiSettings();
+      toast(k ? 'Chave salva neste navegador.' : 'Modelo atualizado.');
+    });
+    q('remove-key').addEventListener('click', function () {
+      store.del(KEY_STORAGE);
+      refreshAiSettings();
+      toast('Chave removida deste navegador.');
+    });
+    host.addEventListener('click', function (e) {
+      var act = e.target.getAttribute && e.target.getAttribute('data-ai');
+      if (!act || !aiPreview[key]) return;
+      var items = aiPreview[key].items.map(function (x) { return newItem(x); });
+      if (act === 'replace') {
+        if (state[key].items.length && !confirm('Substituir a lista atual pelos itens da IA?')) return;
+        state[key].items = items;
+      } else if (act === 'add') {
+        state[key].items = state[key].items.concat(items);
+      }
+      aiPreview[key] = null;
+      host.querySelector('[data-role="preview"]').innerHTML = '';
+      host.querySelector('[data-role="msg"]').textContent = act === 'discard' ? '' : 'Itens aplicados à lista.';
+      buildEditor(key);
+      recalc();
+    });
+  }
+
+  function renderAiPreview(host, key) {
+    var p = aiPreview[key];
+    var box = host.querySelector('[data-role="preview"]');
+    if (!p) { box.innerHTML = ''; return; }
+    var cellEst = function (it, f, v) { return '<td' + (it.est.indexOf(f) >= 0 ? ' class="est"' : '') + '>' + v + '</td>'; };
+    var rows = p.items.map(function (it) {
+      return '<tr><td>' + esc(it.name) + (it.obs ? '<div class="unit-hint">' + esc(it.obs) + '</div>' : '') + '</td>' +
+        cellEst(it, 'qtd', fmt(it.qty, 0)) + cellEst(it, 'potencia', esc(fmt(it.pow, it.pow % 1 ? 1 : 0) + ' ' + it.unit)) +
+        cellEst(it, 'horas_dia', fmt(it.hours, 2)) + cellEst(it, 'dias_mes', fmt(it.days, 0)) + cellEst(it, 'fator_uso', fmt(it.duty, 0)) + '</tr>';
+    }).join('');
+    var warns = p.avisos.map(function (a) { return '<div class="alert warn"><strong>Aviso da IA:</strong> ' + esc(a) + '</div>'; }).join('');
+    box.innerHTML = '<div class="preview"><h3 style="margin-top:0">Lista proposta pela IA</h3>' +
+      '<p class="hint"><span class="legend-est"></span>Campos em amarelo foram estimados pela IA. Ajuste na lista depois de adicionar, se necessário.</p>' +
+      '<div class="table-wrap"><table class="data"><thead><tr><th>Equipamento</th><th>Qtd</th><th>Potência</th><th>Horas/dia</th><th>Dias/mês</th><th>Uso (%)</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      warns +
+      '<div class="ai-actions"><button type="button" class="btn primary" data-ai="add">Adicionar à lista</button>' +
+      '<button type="button" class="btn" data-ai="replace">Substituir a lista</button>' +
+      '<button type="button" class="btn" data-ai="discard">Descartar</button></div></div>';
+  }
+
+  function refreshAiSettings() {
+    var hasKey = !!store.get(KEY_STORAGE);
+    var model = store.get(MODEL_STORAGE) || 'gpt-4o-mini';
+    $$('.ai-panel').forEach(function (host) {
+      var st = host.querySelector('[data-role="status"]');
+      st.textContent = hasKey ? 'Chave cadastrada' : 'Chave não cadastrada';
+      st.className = 'key-status' + (hasKey ? ' on' : '');
+      host.querySelector('[data-role="key"]').value = '';
+      host.querySelector('[data-role="key"]').placeholder = hasKey ? 'Chave salva (digite para substituir)' : 'sk-...';
+      host.querySelector('[data-role="model"]').value = model;
+    });
+  }
+
+  /* ---------- Inicialização ---------- */
+  $$('.ai-panel').forEach(buildAiPanel);
+  refreshAiSettings();
+  syncBindings();
+  buildEditor('consumo');
+  buildEditor('solar');
+  recalc();
+  showPage(location.hash === '#solar' ? 'solar' : 'consumo');
+})();
 </script>
 </body>
 </html>
